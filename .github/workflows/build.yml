@@ -31,21 +31,21 @@ jobs:
         run: |
           pip install pillow
           pyinstaller --onefile --name Scriptify --icon web/favicon.ico \
-            --add-data "web:web" --add-data "js:js" --add-data "index.html:." --add-data "style.css:." \
+            --add-data "web:web" --add-data "js:js" --add-data "index.html:." --add-data "launch.html:." --add-data "style.css:." \
             --osx-bundle-identifier com.infinitode.scriptify --windowed main.py --version-file version_info.txt
 
       - name: Build for Linux
         if: matrix.os == 'ubuntu-latest'
         run: |
           pyinstaller --onefile --name Scriptify --icon web/favicon.ico \
-            --add-data "web:web" --add-data "js:js" --add-data "index.html:." --add-data "style.css:." \
+            --add-data "web:web" --add-data "js:js" --add-data "index.html:." --add-data "launch.html:." --add-data "style.css:." \
             --windowed main.py --version-file version_info.txt
 
       - name: Build for Windows
         if: matrix.os == 'windows-latest'
         run: |
           pyinstaller --onefile --name Scriptify --icon web/favicon.ico `
-            --add-data "web:web" --add-data "js:js" --add-data "index.html:." --add-data "style.css:." `
+            --add-data "web:web" --add-data "js:js" --add-data "index.html:." --add-data "launch.html:." --add-data "style.css:." `
             --windowed main.py --version-file version_info.txt
 
       - name: Upload artifacts
@@ -69,7 +69,7 @@ jobs:
         id: create_release
         uses: actions/create-release@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
         with:
           tag_name: "v${{ github.sha }}"
           release_name: "Release v${{ github.sha }}"
@@ -80,7 +80,7 @@ jobs:
       - name: Upload Linux asset
         uses: actions/upload-release-asset@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./Scriptify-ubuntu-latest/Scriptify
@@ -91,7 +91,7 @@ jobs:
       - name: Upload macOS asset
         uses: actions/upload-release-asset@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./Scriptify-macos-latest/Scriptify
