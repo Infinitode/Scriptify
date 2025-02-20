@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scriptify</title>
+    <link rel="shortcut icon" href="web/favicon.ico" type="image/x-icon">
+    <link rel="apple-touch-icon" href="web/apple-touch-icon.png">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="info-popup">
+        <div class="flex c">
+            <h1>Info</h1>
+            <div class="space"></div>
+            <i class="bi bi-x"></i>
+        </div>
+        <div class="card">
+            <p><i class="bi bi-alarm-fill"></i> Reading time:</p>
+            <p class="output" id="reading-time"></p>
+        </div>
+        <div class="card">
+            <p><i class="bi bi-fonts"></i> Character count:</p>
+            <p class="output" id="character-count"></p>
+        </div>
+        <div class="card">
+            <p><i class="bi bi-input-cursor-text"></i> Word count:</p>
+            <p class="output" id="word-count"></p>
+        </div>
+        <div class="card">
+            <p><i class="bi bi-text-left"></i> Sentence count:</p>
+            <p class="output" id="sentence-count"></p>
+        </div>
+        <div class="card">
+            <p><i class="bi bi-blockquote-left"></i> Average sentence length:</p>
+            <p class="output" id="avg-sentence-length"></p>
+        </div>
+        <div class="card">
+            <p><i class="bi bi-paragraph"></i> Vocabulary variety:</p>
+            <svg class="circular-progress" width="100" height="100" viewBox="0 0 100 100">
+                <!-- Background Circle -->
+                <circle class="circle-bg" cx="50" cy="50" r="40"/>
+                <!-- Progress Circle -->
+                <circle class="circle-progress" id="vocab-var-p" cx="50" cy="50" r="40"/>
+              </svg>
+            <p class="output" id="vocabulary-variety"></p>
+        </div>
+        <div class="card">
+            <p><i class="bi bi-eye-fill"></i> Flesch Score:</p>
+            <svg class="circular-progress" width="100" height="100" viewBox="0 0 100 100">
+                <!-- Background Circle -->
+                <circle class="circle-bg" cx="50" cy="50" r="40"/>
+                <!-- Progress Circle -->
+                <circle class="circle-progress" id="flesch-var-p" cx="50" cy="50" r="40"/>
+              </svg>
+            <p class="output" id="flesch-score"></p>
+        </div>
+    </div>
+    <div class="idea-bar">
+        <h1>Idea</h1>
+        <p>Short description prompt of the idea.</p>
+    </div>
+    <div class="popup">Warning message</div>
+    <div id="dictionaryPopup" class="dictPopup">
+        <h1 id="dictWord">Word</h1>
+        <p><strong>Phonetic:</strong> <span id="phonetic"></span></p>
+        <div id="definitions"></div>
+        <div id="synonymsAntonyms" class="card">
+            <p><strong>Synonyms:</strong> <span id="synonyms"></span></p>
+            <p><strong>Antonyms:</strong> <span id="antonyms"></span></p>
+        </div>
+        <button id="closePopup" class="button">
+            <i class="bi bi-x"></i>Close
+        </button>
+    </div>
+
+    <div class="buttons-grid pywebview-drag-region">
+        <div title="Drag zone"><i class="bi bi-hand-index"></i></div>
+        <div id="min"><i class="bi bi-dash"></i></div>
+        <div id="max"><i class="bi bi-fullscreen"></i></div>
+        <div id="close"><i class="bi bi-x"></i></div>
+    </div>
+    <div class="closer" id="closer1"><i class="bi bi-chevron-compact-left"></i></div>
+    <div class="g1-6">
+        <div class="sidebar">
+            <h1>Scriptify</h1>
+            <div class="space"></div>
+            <button class="button" id="clearbtn"><i class="bi bi-eraser-fill"></i>
+                <div class="space"></div>Clear
+            </button>
+            <button class="button" id="randombtn"><i class="bi bi-dice-5"></i>
+                <div class="space"></div>Random idea<div class="spacer"></div><div class="key">Ctrl + R</div>
+            </button>
+            <button class="button" id="infoPop"><i class="bi bi-info-square-fill"></i>
+                <div class="space"></div>Information Panel
+            </button>
+            <button class="button" onclick="open_file()"><i class="bi bi-folder2"></i>
+                <div class="space"></div>Open<div class="spacer"></div><div class="key">Ctrl + O</div>
+            </button>
+            <button class="button" onclick="save_file()"><i class="bi bi-save"></i>
+                <div class="space"></div>Save<div class="spacer"></div><div class="key">Ctrl + S</div>
+            </button>
+            <button class="button" onclick="export_file()"><i class="bi bi-box-arrow-up-right"></i>
+                <div class="space"></div>Export<div class="spacer"></div><div class="key">Ctrl + E</div>
+            </button>
+            <div class="spacer"></div>
+            <div class="flex-c">
+                Scriptify<div class="spacer"></div><div class="key">v1.0.0 Beta</div></div>
+
+        </div>
+        <div class="content">
+            <div class="bottom-bar toolbar">
+                <div class="closer"><i class="bi bi-chevron-compact-down"></i></div>
+                <span id="words"><i class="bi bi-hash"></i> 0 words</span>
+                <button id="bold" onclick="formatText('bold')" title="Bold"><i class="bi bi-type-bold"></i></button>
+                <button id="italic" onclick="formatText('italic')" title="Italic"><i
+                        class="bi bi-type-italic"></i></button>
+                <button id="underline" onclick="formatText('underline')" title="Underline"><i
+                        class="bi bi-type-underline"></i></button>
+                <button id="heading" onclick="formatText('h1')" title="Heading"><i class="bi bi-type-h1"></i></button>
+                <button id="quote" onclick="formatText('quote')" title="Quote"><i class="bi bi-quote"></i></button>
+                <button id="dictionaryButton" title="Dictionary"><i class="bi bi-book-fill"></i></button>
+                <div class="flex-c">
+                    <button id="transcribe" onclick="toggleTranscription()" title="Transcribe"><i
+                        class="bi bi-mic-fill"></i></button>
+                <div id="timer">Not listening</div>
+                </div>
+
+            </div>
+            <div class="text">
+                <h1 contenteditable="true" id="Title">Story Title</h1>
+                <p contenteditable="true" id="transcribedText">You can begin writing here. Or click the button in the
+                    bottom bar, to start
+                    live transcription.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/dictionary.js"></script>
+    <script src="js/utlities.js"></script>
+    <script src="js/transcription.js"></script>
+    <script src="js/extras.js"></script>
+    <script src="js/information-panel.js"></script>
+    <script src="js/auto-backup.js"></script>
+</body>
+
+</html>

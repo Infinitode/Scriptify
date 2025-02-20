@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scriptify Startup</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        html,
+        body {
+            padding: 0;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        h1 {
+            color: var(--pri);
+            font-weight: 600;
+            font-size: x-large;
+            letter-spacing: -0.025em;
+        }
+
+        .button {
+            font-family: 'General Sans', sans-serif;
+
+            .bi {
+                font-size: 1em;
+            }
+
+            .space {
+                flex-grow: 0;
+                width: 5px;
+            }
+        }
+
+        .button:hover {
+            background-color: var(--bg5);
+        }
+
+        .button.selected {
+            background-color: var(--bg5);
+
+            .bi {
+                color: var(--pri);
+            }
+        }
+        .flex-c.disabled{
+            pointer-events: none;
+        }
+
+        .key {
+            font-size: medium;
+        }
+
+        .button2 {
+            font-family: 'General Sans', sans-serif;
+            transition: 0.25s;
+            pointer-events: all;
+            position: relative;
+        }
+
+        .button2 .spacer {
+            flex-grow: 1;
+        }
+
+        .button2.disabled {
+            background-color: var(--bg4);
+            pointer-events: none;
+        }
+
+        .subcol {
+            color: var(--t2);
+            font-size: small;
+
+            span {
+                text-decoration: underline;
+            }
+        }
+
+        .progress {
+            height: 5px;
+            display: none;
+            background-color: var(--bg4);
+            border-bottom-right-radius: var(--brrder);
+            border-bottom-left-radius: var(--border);
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            overflow: hidden;
+            right: 0;
+        }
+
+        .progress::after {
+            content: '';
+            width: 0;
+            left: 0;
+            position: absolute;
+            animation: progressInter 2s linear infinite;
+            height: 100%;
+            background-color: var(--pri);
+            border-bottom-right-radius: var(--border);
+            border-bottom-left-radius: var(--border);
+        }
+
+        @keyframes progressInter {
+            0% {
+                width: 5%;
+                left: 0;
+            }
+
+            100% {
+                width: 10%;
+                left: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="buttons-grid pywebview-drag-region">
+        <div title="Drag zone"><i class="bi bi-hand-index"></i></div>
+        <div id="min"><i class="bi bi-dash"></i></div>
+        <div id="max"><i class="bi bi-fullscreen"></i></div>
+        <div id="close"><i class="bi bi-x"></i></div>
+    </div>
+    <div>
+        <h1>Scriptify startup</h1>
+        <p>Choose a model to use, we'll download it and set it up.</p>
+        <br>
+        <div class="flex-c">
+            <button class="button"><i class="bi bi-1-square-fill"></i>
+                <div class="space"></div>Tiny
+            </button>
+            <button class="button"><i class="bi bi-2-square-fill"></i>
+                <div class="space"></div>Base
+            </button>
+            <button class="button"><i class="bi bi-3-square-fill"></i>
+                <div class="space"></div>Small
+            </button>
+            <button class="button"><i class="bi bi-4-square-fill"></i>
+                <div class="space"></div>Medium
+            </button>
+            <button class="button"><i class="bi bi-5-square-fill"></i>
+                <div class="space"></div>Large
+            </button>
+            <button class="button"><i class="bi bi-6-square-fill"></i>
+                <div class="space"></div>Turbo
+            </button>
+        </div>
+        <br>
+        <p>*Larger models require more computational power to run. Once the model is downloaded,<br> we'll automatically
+            set it up and use it for Speech to Text.<br>- You can find the downloaded models inside the <span
+                class="key">/models</span> folder.<br>- You can remove larger models to save storage space.</p>
+        <br><br>
+        <p class="subcol"><i>*You'll need <span id="vram">~0GB</span> of VRAM to run this model. This model is <span
+                    id="speed">~0X</span> the relative speed.</i></p>
+        <br>
+        <button class="button2 disabled">Download and Start<div class="spacer"></div><i
+                class="bi bi-arrow-right-square-fill"></i>
+            <div class="progress">
+        </button>
+        <br>
+    </div>
+    </div>
+    <script>
+        const options = document.querySelectorAll('.button');
+        var selection = 0;
+        var selected_model = '';
+
+        for (let i = 0; i < options.length; i++) {
+            options[i].addEventListener('click', () => {
+                for (let j = 0; j < options.length; j++) {
+                    options[j].classList.remove('selected');
+                }
+                options[i].classList.add('selected');
+                selection = i;
+                if (document.querySelector('.button2').classList.contains('disabled')) {
+                    document.querySelector('.button2').classList.remove('disabled');
+                }
+
+                if (selection == 0) {
+                    document.getElementById('vram').innerText = '~1GB';
+                    document.getElementById('speed').innerText = '~10X';
+                    selected_model = 'tiny.en';
+                } else if (selection == 1) {
+                    document.getElementById('vram').innerText = '~1GB';
+                    document.getElementById('speed').innerText = '~7X';
+                    selected_model = 'base.en';
+                } else if (selection == 2) {
+                    document.getElementById('vram').innerText = '~2GB';
+                    document.getElementById('speed').innerText = '~4X';
+                    selected_model = 'small.en';
+                } else if (selection == 3) {
+                    document.getElementById('vram').innerText = '~5GB';
+                    document.getElementById('speed').innerText = '~2X';
+                    selected_model = 'medium.en';
+                } else if (selection == 4) {
+                    document.getElementById('vram').innerText = '~10GB';
+                    document.getElementById('speed').innerText = '~1X';
+                    selected_model = 'large';
+                } else if (selection == 5) {
+                    document.getElementById('vram').innerText = '~6GB';
+                    document.getElementById('speed').innerText = '~8X';
+                    selected_model = 'turbo';
+                }
+            });
+        }
+
+        document.querySelector('.button2').addEventListener('click', () => {
+            document.querySelector('.flex-c').classList.add('disabled');
+            document.querySelector('.button2').classList.add('disabled');
+            document.querySelector('.progress').style.display = 'block';
+            if (selected_model != '') {
+                pywebview.api.download_model(selected_model);
+            }
+        });
+
+        function closeWindow() {
+            pywebview.api.closeWindow();
+        }
+        document.getElementById("close").addEventListener("click", closeWindow);
+        function minimizeWindow() {
+            pywebview.api.minimizeWindow();
+        }
+        document.getElementById("min").addEventListener("click", minimizeWindow);
+        function toggleFullscreen() {
+            pywebview.api.toggleFullscreen();
+        }
+        document.getElementById("max").addEventListener("click", toggleFullscreen);
+    </script>
+</body>
+
+</html>

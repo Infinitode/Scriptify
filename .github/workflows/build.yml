@@ -1,0 +1,110 @@
+name: Build Distributables
+
+on:
+  push:
+    branches:
+      - main  # Change this to your default branch if different
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'  # Specify your Python version
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller openai-whisper==20240930 sounddevice scipy python-docx fpdf beautifulsoup4 pywebview
+
+      - name: Build for macOS
+        if: matrix.os == 'macos-latest'
+        run: |
+          pip install pillow
+          pyinstaller --onefile --name Scriptify --icon web/favicon.ico \
+            --add-data "web:web" --add-data "js:js" --add-data "index.html:." --add-data "style.css:." \
+            --osx-bundle-identifier com.infinitode.scriptify --windowed main.py --version-file version_info.txt
+
+      - name: Build for Linux
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          pyinstaller --onefile --name Scriptify --icon web/favicon.ico \
+            --add-data "web:web" --add-data "js:js" --add-data "index.html:." --add-data "style.css:." \
+            --windowed main.py --version-file version_info.txt
+
+      - name: Build for Windows
+        if: matrix.os == 'windows-latest'
+        run: |
+          pyinstaller --onefile --name Scriptify --icon web/favicon.ico `
+            --add-data "web:web" --add-data "js:js" --add-data "index.html:." --add-data "style.css:." `
+            --windowed main.py --version-file version_info.txt
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Scriptify-${{ matrix.os }}
+          path: dist/Scriptify*
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      # Download all the artifacts from the build job.
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: .
+
+      # Create a release using the commit SHA as the version.
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: "v${{ github.sha }}"
+          release_name: "Release v${{ github.sha }}"
+          draft: false
+          prerelease: false
+
+      # Upload the Linux asset. Adjust the path if your file name differs.
+      - name: Upload Linux asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./Scriptify-ubuntu-latest/Scriptify
+          asset_name: Scriptify-linux
+          asset_content_type: application/octet-stream
+
+      # Upload the macOS asset.
+      - name: Upload macOS asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./Scriptify-macos-latest/Scriptify
+          asset_name: Scriptify-macos
+          asset_content_type: application/octet-stream
+
+      # Upload the Windows asset.
+      - name: Upload Windows asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./Scriptify-windows-latest/Scriptify.exe
+          asset_name: Scriptify-windows.exe
+          asset_content_type: application/octet-stream
