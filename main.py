@@ -88,6 +88,16 @@ def extract_ffmpeg():
         print(f"Error extracting FFmpeg: {e}")
         sys.exit(1)
 
+# Extract and set the FFmpeg path
+FFMPEG_PATH = extract_ffmpeg()
+
+# Test if FFmpeg works
+try:
+    subprocess.run([FFMPEG_PATH, "-version"], check=True)
+    print("FFmpeg is working correctly.")
+except Exception as e:
+    print(f"Error running FFmpeg: {e}")
+
 # Create if it doesn't exist
 if not os.path.exists(os.environ["WHISPER_DOWNLOAD_DIR"]):
     os.makedirs(os.environ["WHISPER_DOWNLOAD_DIR"])
@@ -528,13 +538,3 @@ if __name__ == '__main__':
                                    resizable=True, min_size=(800, 600), background_color='#ffffff', frameless=True, easy_drag=False)
     api.set_window(window)
     webview.start()
-
-    # Extract and set the FFmpeg path
-    FFMPEG_PATH = extract_ffmpeg()
-
-    # Test if FFmpeg works
-    try:
-        subprocess.run([FFMPEG_PATH, "-version"], check=True)
-        print("FFmpeg is working correctly.")
-    except Exception as e:
-        print(f"Error running FFmpeg: {e}")
