@@ -26,11 +26,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install pyinstaller openai-whisper==20240930 sounddevice scipy python-docx fpdf beautifulsoup4 pywebview
 
-      - name: Install UPX for Linux
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          sudo apt-get install upx-ucl
-
       - name: Install UPX for Windows
         if: matrix.os == 'windows-latest'
         run: |
@@ -51,15 +46,10 @@ jobs:
             --add-data "web:web" --add-data "js:js" --add-data "index.html:." --add-data "launch.html:." --add-data "style.css:." \
             --windowed main.py --version-file version_info.txt
 
-      - name: Strip Debug Symbols (Linux)
-        if: matrix.os == 'ubuntu-latest'
-        run: |
           strip dist/Scriptify
 
-      - name: Compress Executable with UPX for Linux
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          upx --best dist/Scriptify
+          sudo apt install p7zip-full
+          7z a -t7z -mx=9 -m0=lzma2 -ms=on Scriptify.7z dist/Scriptify
 
       - name: Build for Windows
         if: matrix.os == 'windows-latest'

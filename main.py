@@ -34,17 +34,9 @@ if getattr(sys, 'frozen', False):
 else:
     base_path = os.path.abspath(".")
 
-# Get the model directory
-if getattr(sys, 'frozen', False):
-    # Get the model directory next to the application executable
-    application_path = os.path.dirname(sys.executable)
-    model_dir = os.path.join(application_path, "models")
-else:
-    model_dir = os.path.join(base_path, "models")
-
 # Set whisper download folder
-os.environ["WHISPER_DOWNLOAD_DIR"] = model_dir
-os.environ["WHISPER_CACHE_DIR"] = model_dir
+os.environ["WHISPER_DOWNLOAD_DIR"] = os.path.join(base_path, "models")
+os.environ["WHISPER_CACHE_DIR"] = os.path.join(base_path, "models")
 
 def extract_ffmpeg():
     """Extracts the correct FFmpeg binary for the OS and returns its path."""
@@ -95,16 +87,6 @@ def extract_ffmpeg():
     except Exception as e:
         print(f"Error extracting FFmpeg: {e}")
         sys.exit(1)
-
-# Extract and set the FFmpeg path
-FFMPEG_PATH = extract_ffmpeg()
-
-# Test if FFmpeg works
-try:
-    subprocess.run([FFMPEG_PATH, "-version"], check=True)
-    print("FFmpeg is working correctly.")
-except Exception as e:
-    print(f"Error running FFmpeg: {e}")
 
 # Create if it doesn't exist
 if not os.path.exists(os.environ["WHISPER_DOWNLOAD_DIR"]):
@@ -546,3 +528,13 @@ if __name__ == '__main__':
                                    resizable=True, min_size=(800, 600), background_color='#ffffff', frameless=True, easy_drag=False)
     api.set_window(window)
     webview.start()
+
+    # Extract and set the FFmpeg path
+    FFMPEG_PATH = extract_ffmpeg()
+
+    # Test if FFmpeg works
+    try:
+        subprocess.run([FFMPEG_PATH, "-version"], check=True)
+        print("FFmpeg is working correctly.")
+    except Exception as e:
+        print(f"Error running FFmpeg: {e}")
