@@ -51,7 +51,7 @@ jobs:
         run: |
           pyinstaller --onefile --name Scriptify --icon web/favicon.ico --add-data "ffmpeg/ffmpeg_windows.zip:ffmpeg/ffmpeg_windows.zip" `
             --add-data "web:web" --add-data "js:js" --add-data "index.html:." --add-data "launch.html:." --add-data "style.css:." `
-            --windowed main.py --version-file version_info.txt
+            main.py --version-file version_info.txt
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
