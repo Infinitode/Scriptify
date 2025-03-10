@@ -34,9 +34,17 @@ if getattr(sys, 'frozen', False):
 else:
     base_path = os.path.abspath(".")
 
+# Get the model directory
+if getattr(sys, 'frozen', False):
+    # Get the model directory next to the application executable
+    application_path = os.path.dirname(sys.executable)
+    model_dir = os.path.join(application_path, "models")
+else:
+    model_dir = os.path.join(base_path, "models")
+
 # Set whisper download folder
-os.environ["WHISPER_DOWNLOAD_DIR"] = os.path.join(base_path, "models")
-os.environ["WHISPER_CACHE_DIR"] = os.path.join(base_path, "models")
+os.environ["WHISPER_DOWNLOAD_DIR"] = model_dir
+os.environ["WHISPER_CACHE_DIR"] = model_dir
 
 def extract_ffmpeg():
     """Extracts the correct FFmpeg binary for the OS and returns its path."""

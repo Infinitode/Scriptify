@@ -30,14 +30,14 @@ jobs:
         if: matrix.os == 'macos-latest'
         run: |
           pip install pillow
-          pyinstaller --onefile --name Scriptify --icon web/favicon.ico --add-data "ffmpeg/ffmpeg_mac.zip:ffmpeg" \
+          pyinstaller --onefile --name Scriptify --icon web/favicon.ico --add-data "ffmpeg/ffmpeg_mac.zip:ffmpeg" --add-data "whisper:whisper" \
             --add-data "web:web" --add-data "js:js" --add-data "index.html:." --add-data "launch.html:." --add-data "style.css:." \
             --osx-bundle-identifier com.infinitode.scriptify --windowed main.py --version-file version_info.txt
 
       - name: Build for Linux
         if: matrix.os == 'ubuntu-latest'
         run: |
-          pyinstaller --onefile --name Scriptify --icon web/favicon.ico --add-data "ffmpeg/ffmpeg_ubuntu.zip:ffmpeg" \
+          pyinstaller --onefile --name Scriptify --icon web/favicon.ico --add-data "ffmpeg/ffmpeg_ubuntu.zip:ffmpeg" --add-data "whisper:whisper" \
             --add-data "web:web" --add-data "js:js" --add-data "index.html:." --add-data "launch.html:." --add-data "style.css:." \
             --windowed main.py --version-file version_info.txt
 
@@ -49,7 +49,7 @@ jobs:
       - name: Build for Windows
         if: matrix.os == 'windows-latest'
         run: |
-          pyinstaller --onefile --name Scriptify --icon web/favicon.ico --add-data "ffmpeg/ffmpeg_windows.zip:ffmpeg" `
+          pyinstaller --onefile --name Scriptify --icon web/favicon.ico --add-data "ffmpeg/ffmpeg_windows.zip:ffmpeg" --add-data "whisper:whisper" `
             --add-data "web:web" --add-data "js:js" --add-data "index.html:." --add-data "launch.html:." --add-data "style.css:." `
             main.py --version-file version_info.txt
 
