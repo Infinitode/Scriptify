@@ -41,6 +41,11 @@ jobs:
             --add-data "web:web" --add-data "js:js" --add-data "index.html:." --add-data "launch.html:." --add-data "style.css:." \
             --windowed main.py --version-file version_info.txt
 
+      - name: Strip Debug Symbols (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          strip dist/Scriptify
+
       - name: Build for Windows
         if: matrix.os == 'windows-latest'
         run: |
