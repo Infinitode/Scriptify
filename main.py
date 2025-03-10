@@ -4,6 +4,9 @@ import webview
 import os
 import time
 import sys
+import subprocess
+import shutil
+import tempfile
 import threading
 import whisper  # Whisper for speech-to-text processing
 import queue
@@ -34,6 +37,53 @@ else:
 # Set whisper download folder
 os.environ["WHISPER_DOWNLOAD_DIR"] = os.path.join(base_path, "models")
 os.environ["WHISPER_CACHE_DIR"] = os.path.join(base_path, "models")
+
+def extract_ffmpeg():
+    """Extracts the correct FFmpeg binary for the OS and returns its path."""
+    temp_dir = tempfile.mkdtemp()
+
+    # Determine OS and archive filename
+    if sys.platform.startswith("win"):
+        archive_name = "ffmpeg_windows.zip"
+        extracted_binary = "ffmpeg.exe"
+    elif sys.platform.startswith("darwin"):
+        archive_name = "ffmpeg_mac.zip"
+        extracted_binary = "ffmpeg"
+    elif sys.platform.startswith("linux"):
+        archive_name = "ffmpeg_ubuntu.zip"
+        extracted_binary = "ffmpeg"
+    else:
+        raise RuntimeError("Unsupported OS")
+
+    # Paths
+    archive_path = os.path.join(os.path.dirname(__file__), "ffmpeg", archive_name)
+    extracted_path = os.path.join(temp_dir, extracted_binary)
+
+    # Extract using shutil (built-in support for ZIP)
+    try:
+        print(f"Extracting {archive_name}...")
+        shutil.unpack_archive(archive_path, temp_dir)
+
+        # Ensure correct executable permissions (Linux/macOS)
+        if not sys.platform.startswith("win"):
+            os.chmod(extracted_path, 0o755)
+
+        print(f"FFmpeg extracted to: {extracted_path}")
+        return extracted_path
+
+    except Exception as e:
+        print(f"Error extracting FFmpeg: {e}")
+        sys.exit(1)
+
+# Extract and set the FFmpeg path
+FFMPEG_PATH = extract_ffmpeg()
+
+# Test if FFmpeg works
+try:
+    subprocess.run([FFMPEG_PATH, "-version"], check=True)
+    print("FFmpeg is working correctly.")
+except Exception as e:
+    print(f"Error running FFmpeg: {e}")
 
 # Create if it doesn't exist
 if not os.path.exists(os.environ["WHISPER_DOWNLOAD_DIR"]):
