@@ -57,12 +57,25 @@ def extract_ffmpeg():
 
     # Paths
     archive_path = os.path.join(base_path, "ffmpeg", archive_name)
-    extracted_path = os.path.join(temp_dir, extracted_binary)
 
-    # Extract using shutil (built-in support for ZIP)
+    # Extract using shutil
     try:
-        print(f"Extracting {archive_name}...")
+        print(f"Extracting {archive_name} to {temp_dir}...")
         shutil.unpack_archive(archive_path, temp_dir)
+
+        # Debug: List extracted files
+        extracted_files = os.listdir(temp_dir)
+        print("Extracted files:", extracted_files)
+
+        # Find FFmpeg binary (handles nested folders)
+        extracted_path = None
+        for root, _, files in os.walk(temp_dir):
+            if extracted_binary in files:
+                extracted_path = os.path.join(root, extracted_binary)
+                break
+
+        if extracted_path is None:
+            raise FileNotFoundError(f"FFmpeg binary '{extracted_binary}' not found in extracted files.")
 
         # Ensure correct executable permissions (Linux/macOS)
         if not sys.platform.startswith("win"):
