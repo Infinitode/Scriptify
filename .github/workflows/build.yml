@@ -68,11 +68,6 @@ jobs:
             --add-data "web:web" --add-data "js:js" --add-data "index.html:." --add-data "launch.html:." --add-data "style.css:." `
             main.py --version-file version_info.txt
 
-      - name: Compress Executable with UPX for Windows
-        if: matrix.os == 'windows-latest'
-        run: |
-          upx --best dist/Scriptify.exe
-
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
