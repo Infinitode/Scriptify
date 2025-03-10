@@ -43,13 +43,10 @@ jobs:
 
           strip dist/Scriptify
 
-          sudo apt install p7zip-full
-          7z a -t7z -mx=9 -m0=lzma2 -ms=on Scriptify.7z dist/Scriptify
-
       - name: Build for Windows
         if: matrix.os == 'windows-latest'
         run: |
-          pyinstaller --onefile --name Scriptify --icon web/favicon.ico --add-data "ffmpeg/ffmpeg_windows.zip:ffmpeg" --hidden-import="whisper.assets" `
+          pyinstaller --onefile --name Scriptify --icon web/favicon.ico --add-data "ffmpeg/ffmpeg_windows.zip:ffmpeg" --hidden-import="whisper" `
             --add-data "web:web" --add-data "js:js" --add-data "index.html:." --add-data "launch.html:." --add-data "style.css:." `
             main.py --version-file version_info.txt
 
