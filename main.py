@@ -34,9 +34,15 @@ if getattr(sys, 'frozen', False):
 else:
     base_path = os.path.abspath(".")
 
+# Determine the directory of the script or the executable
+if getattr(sys, 'frozen', False):
+    app_dir = os.path.dirname(sys.executable)
+else:
+    app_dir = os.path.dirname(os.path.abspath(__file__))
+
 # Set whisper download folder
-os.environ["WHISPER_DOWNLOAD_DIR"] = os.path.join(base_path, "models")
-os.environ["WHISPER_CACHE_DIR"] = os.path.join(base_path, "models")
+os.environ["WHISPER_DOWNLOAD_DIR"] = os.path.join(app_dir, "models")
+os.environ["WHISPER_CACHE_DIR"] = os.path.join(app_dir, "models")
 
 def extract_ffmpeg():
     """Extracts the correct FFmpeg binary for the OS and returns its path."""
@@ -292,7 +298,7 @@ class Api:
             # Format the date and time to fit in a filename
             filename_time = now.strftime("%Y-%m-%d_%H-%M-%S")
             backup_filename = f"{sanitized_title}_{filename_time}_backup.scriptify"
-            backup_path = os.path.join(base_path, backup_filename)
+            backup_path = os.path.join(app_dir, backup_filename)
 
             # Prepare the data to be saved
             data = {

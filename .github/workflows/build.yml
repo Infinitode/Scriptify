@@ -10,7 +10,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-latest] # [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
 
     steps:
       - name: Checkout code
@@ -37,9 +37,11 @@ jobs:
       - name: Build for Linux
         if: matrix.os == 'ubuntu-latest'
         run: |
+          sudo apt-get install -y upx
+
           pyinstaller --onefile --name Scriptify --icon web/favicon.ico --add-data "ffmpeg/ffmpeg_ubuntu.zip:ffmpeg" --hidden-import="whisper" --add-data "whisper:whisper" --exclude-module tkinter --exclude-module PyQt5 \
             --add-data "web:web" --add-data "js:js" --add-data "index.html:." --add-data "launch.html:." --add-data "style.css:." \
-            --windowed main.py --version-file version_info.txt
+            --windowed main.py --version-file version_info.txt --upx-dir /usr/bin
 
           strip dist/Scriptify
 
