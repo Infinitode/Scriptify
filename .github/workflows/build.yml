@@ -2,8 +2,8 @@ name: Build Distributables
 
 on:
   push:
-    branches:
-      - main  # Change this to your default branch if different
+    tags:
+      - '*'
 
 jobs:
   build:
