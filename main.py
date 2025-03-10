@@ -56,7 +56,7 @@ def extract_ffmpeg():
         raise RuntimeError("Unsupported OS")
 
     # Paths
-    archive_path = os.path.join(os.path.dirname(__file__), "ffmpeg", archive_name)
+    archive_path = os.path.join(base_path, "ffmpeg", archive_name)
     extracted_path = os.path.join(temp_dir, extracted_binary)
 
     # Extract using shutil (built-in support for ZIP)
