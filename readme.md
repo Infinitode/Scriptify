@@ -22,6 +22,21 @@ Scriptify is an AI writing tool designed for authors and creatives. It leverages
 - Several export formats have been added, though there are some issues with `<h2>` headings.
 - Added an `information panel` for writing statistics.
 
+> [!IMPORTANT]
+> **For Linux/Ubuntu users:**  
+> The release binary is split into multiple zip files due to GitHub's size constraints. We've tried to reduce the file size during and after build as much as possible, but we could not get it below 2GB which is the maximum allowed for releases. You can download all the parts of the binary and use **7-Zip (`p7zip-full`)** or **unzip (`unzip`)** to unzip the files.
+>
+> Using 7-Zip:
+> ```bash
+> sudo apt-get install p7zip-full
+> ```
+> ```bash
+> 7z x scriptify_ubuntu_v1_0_0_beta.zip
+> ```
+
+> [!NOTE]
+> Releases for Scriptify will not be included in [Distributables](https://github.com/Infinitode/Distributables) since the release binaries are already distributed here.
+
 ## Installation (from source)
 
 1. **Clone the repository:**
