@@ -2,6 +2,8 @@
 
 Scriptify is an AI writing tool designed for authors and creatives. It leverages OpenAI's state-of-the-art Whisper model to deliver near-real-time audio transcription, helping you capture your thoughts as you speak.
 
+Visit our website for screenshots/minimum requirements, and supported platforms: https://infinitode.netlify.app/apps/scriptify.
+
 ## Features
 
 - **Near Realtime Transcription:** Convert spoken words into text almost instantly.
