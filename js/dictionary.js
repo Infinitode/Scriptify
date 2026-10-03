@@ -6,18 +6,76 @@ async function fetchDictionaryDefinition(word) {
   const cleanWord = String(word || "").trim();
   if (!cleanWord) return;
 
+  // --- Primary API ---
   try {
     const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(cleanWord)}`);
-    const data = await response.json();
-    if (!response.ok || !Array.isArray(data) || !data.length) {
-      displayMessage(`No definition found for “${cleanWord}”.`);
+    if (response.ok) {
+      const data = await response.json();
+      if (Array.isArray(data) && data.length) {
+        displayDictionaryData(data);
+        return;
+      }
+    }
+  } catch (primaryError) {
+    console.warn("Primary dictionary API unavailable, trying fallback:", primaryError);
+  }
+
+  // --- Fallback API ---
+  try {
+    const fallbackResponse = await fetch(`https://freedictionaryapi.com/api/v1/entries/en/${encodeURIComponent(cleanWord)}`);
+    if (!fallbackResponse.ok) {
+      displayMessage(`No definition found for "${cleanWord}".`);
       return;
     }
-    displayDictionaryData(data);
-  } catch (error) {
-    console.error("Dictionary lookup failed:", error);
+    const fallbackData = await fallbackResponse.json();
+    const normalised = normalizeFreeDict(fallbackData);
+    if (!normalised.length) {
+      displayMessage(`No definition found for "${cleanWord}".`);
+      return;
+    }
+    displayDictionaryData(normalised);
+  } catch (fallbackError) {
+    console.error("Fallback dictionary API also failed:", fallbackError);
     displayMessage("The dictionary could not be reached. Check your connection.", "error");
   }
+}
+
+/**
+ * Converts a freedictionaryapi.com response object into the array-of-entries
+ * shape that displayDictionaryData expects (dictionaryapi.dev format).
+ */
+function normalizeFreeDict(data) {
+  if (!data || !Array.isArray(data.entries) || !data.entries.length) return [];
+
+  // Group entries by partOfSpeech so each group becomes one "meaning".
+  const meaningMap = new Map();
+  for (const entry of data.entries) {
+    const pos = entry.partOfSpeech || "unknown";
+    if (!meaningMap.has(pos)) meaningMap.set(pos, { partOfSpeech: pos, definitions: [], synonyms: [], antonyms: [] });
+    const meaning = meaningMap.get(pos);
+
+    for (const sense of entry.senses || []) {
+      meaning.definitions.push({
+        definition: sense.definition || "",
+        example: (sense.examples || [])[0] || "",
+      });
+      (sense.synonyms || []).forEach((s) => meaning.synonyms.push(s));
+      (sense.antonyms || []).forEach((a) => meaning.antonyms.push(a));
+    }
+
+    (entry.synonyms || []).forEach((s) => meaning.synonyms.push(s));
+    (entry.antonyms || []).forEach((a) => meaning.antonyms.push(a));
+  }
+
+  const firstEntry = data.entries[0];
+  const phonetic = (firstEntry?.pronunciations || []).find((p) => p.text)?.text || "";
+
+  return [{
+    word: data.word || "",
+    phonetic,
+    phonetics: phonetic ? [{ text: phonetic }] : [],
+    meanings: Array.from(meaningMap.values()),
+  }];
 }
 
 function displayDictionaryData(data) {
