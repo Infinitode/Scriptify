@@ -19,12 +19,12 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'  # Specify your Python version
+          python-version: '3.11'  # Specify your Python version
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pyinstaller openai-whisper==20240930 sounddevice scipy python-docx fpdf beautifulsoup4 pywebview
+          pip install pyinstaller openai-whisper==20250625 sounddevice scipy python-docx fpdf beautifulsoup4 pywebview
 
       - name: Build for macOS
         if: matrix.os == 'macos-latest'
