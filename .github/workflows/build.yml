@@ -139,7 +139,7 @@ jobs:
   # Release
   # =============================================================
 
-  release:
+    release:
     name: Create GitHub Release
     needs: build
     runs-on: ubuntu-latest
@@ -172,16 +172,16 @@ jobs:
           mkdir -p release/final
 
           mv release/linux/Scriptify \
-             "release/final/Scriptify-linux"
+            release/final/Scriptify-linux
 
           mv release/macos/Scriptify \
-             "release/final/Scriptify-macos"
+            release/final/Scriptify-macos
 
           mv release/windows/Scriptify.exe \
-             "release/final/Scriptify-windows.exe"
+            release/final/Scriptify-windows.exe
 
-          chmod +x "release/final/Scriptify-linux"
-          chmod +x "release/final/Scriptify-macos"
+          chmod +x release/final/Scriptify-linux
+          chmod +x release/final/Scriptify-macos
 
           ls -lah release/final
 
@@ -193,5 +193,6 @@ jobs:
             release/final/Scriptify-linux \
             release/final/Scriptify-macos \
             release/final/Scriptify-windows.exe \
+            --repo "${{ github.repository }}" \
             --title "Scriptify ${{ github.ref_name }}" \
             --generate-notes
