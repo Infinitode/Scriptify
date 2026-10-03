@@ -211,7 +211,7 @@ function createRecentStoryRow(story) {
   const title = document.createElement("strong");
   title.textContent = story.name;
   const meta = document.createElement("small");
-  meta.textContent = `Edited ${storyDate(story.updatedAt)} · Started ${storyDate(story.createdAt)}`;
+  meta.textContent = `Edited ${storyDate(story.updatedAt)}`;
   text.append(title, meta);
   open.append(icon, text);
   row.append(open, createStoryMenu(story.id));
@@ -306,9 +306,32 @@ function closeStoryMenus(except = null) {
     if (menu === except) return;
     menu.hidden = true;
     menu.inert = true;
+    menu.removeAttribute("style");
     const toggle = menu.parentElement && menu.parentElement.querySelector("[data-menu-toggle]");
     if (toggle) toggle.setAttribute("aria-expanded", "false");
   });
+}
+
+// The menu is fixed to the viewport so it is never clipped by the sidebar or by
+// the scrolling story list, which would cut off the rename, copy and delete
+// actions. Coordinates are set on open and flip the menu above the button when
+// there is not enough room below it.
+function positionStoryMenu(menu, toggle) {
+  const rect = toggle.getBoundingClientRect();
+  const margin = 8;
+  const width = menu.offsetWidth;
+  const height = menu.offsetHeight;
+  let left = rect.right - width;
+  let top = rect.bottom + 6;
+
+  if (left < margin) left = margin;
+  if (left + width > window.innerWidth - margin) left = window.innerWidth - width - margin;
+  if (left < margin) left = margin;
+  if (top + height > window.innerHeight - margin) top = rect.top - height - 6;
+  if (top < margin) top = margin;
+
+  menu.style.left = `${Math.round(left)}px`;
+  menu.style.top = `${Math.round(top)}px`;
 }
 
 function toggleStoryMenu(toggle) {
@@ -320,8 +343,11 @@ function toggleStoryMenu(toggle) {
   menu.inert = !open;
   toggle.setAttribute("aria-expanded", String(open));
   if (open) {
+    positionStoryMenu(menu, toggle);
     const firstAction = menu.querySelector("[data-story-action]");
     if (firstAction) firstAction.focus();
+  } else {
+    menu.removeAttribute("style");
   }
 }
 
@@ -785,6 +811,13 @@ libraryStoryList.addEventListener("click", handleStoryListClick);
 document.addEventListener("click", (event) => {
   if (!event.target.closest(".story-menu-wrap")) closeStoryMenus();
 });
+
+// A fixed menu would otherwise float away from its row when the page moves.
+window.addEventListener("resize", () => closeStoryMenus());
+[recentStoriesList, libraryStoryList, document.querySelector(".sidebar"), document.querySelector(".story-library-screen")]
+  .forEach((container) => {
+    if (container) container.addEventListener("scroll", () => closeStoryMenus(), { passive: true });
+  });
 
 document.getElementById("toggleRecent").addEventListener("click", (event) => {
   const button = event.currentTarget;

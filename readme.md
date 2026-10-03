@@ -16,6 +16,14 @@ Visit our website for screenshots/minimum requirements, and supported platforms:
 - **Autosave & Backup:** The active story is saved automatically, with a separate desktop safety snapshot every 10 minutes.
 - **No Limits:** Scriptify is 100% free, with no limits or ads.
 
+## Changelog `v1.2.1-beta`:
+
+- Rebuilt the startup window so it matches the writing studio: model cards with download size, VRAM and speed, and a progress bar that reports real download progress.
+- Bundled the icon font and typefaces with the app, so the interface renders correctly without an internet connection.
+- Fixed the writing desk's horizontal padding and aligned the page heading with the page itself.
+- Reworked the recent-stories rows in the sidebar — rename, duplicate and delete now open in a menu that is no longer clipped by the sidebar.
+- Tidied the interface's type scale and spacing so the small labels stay legible and consistent.
+
 ## Changelog `v1.2.0-beta`:
 
 - Refreshed the writing studio with reading mode, writing metrics, formatting tools, and inspiration prompts.
@@ -105,6 +113,13 @@ When running in a regular browser rather than the desktop app, the library uses 
 ## License & Redistribution
 
 This project is open source. However, it may not be redistributed without significant changes or under the same name. Please refer to the [LICENSE](LICENSE) file for more details on the terms of use.
+
+Scriptify bundles a few third-party assets so the interface renders without an internet connection:
+
+- [Bootstrap Icons](https://icons.getbootstrap.com/) — MIT licence, in `web/vendor/bootstrap-icons/`.
+- [Inter](https://rsms.me/inter/) and [Literata](https://fonts.google.com/specimen/Literata) variable fonts — SIL Open Font License 1.1, in `web/fonts/`.
+
+Each asset's licence is kept alongside the files it covers.
 
 ## Contributing
 

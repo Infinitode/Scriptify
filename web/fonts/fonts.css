@@ -1,0 +1,40 @@
+/*!
+ * Scriptify typefaces, bundled with the app so the interface keeps its
+ * typography when there is no internet connection.
+ *
+ * Inter Variable  — interface text   (SIL Open Font License 1.1)
+ * Literata Variable — headings and long-form reading (SIL Open Font License 1.1)
+ *
+ * Full license texts: LICENSE-Inter.txt and LICENSE-Literata.txt.
+ * Only the latin subset is bundled; the app's transcription models are English.
+ */
+
+/* Inter Variable — latin, upright */
+@font-face {
+    font-family: "Inter Variable";
+    font-style: normal;
+    font-weight: 100 900;
+    font-display: swap;
+    src: url("inter-latin-wght-normal.woff2") format("woff2");
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* Literata Variable — latin, upright */
+@font-face {
+    font-family: "Literata Variable";
+    font-style: normal;
+    font-weight: 200 900;
+    font-display: swap;
+    src: url("literata-latin-wght-normal.woff2") format("woff2");
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* Literata Variable — latin, italic */
+@font-face {
+    font-family: "Literata Variable";
+    font-style: italic;
+    font-weight: 200 900;
+    font-display: swap;
+    src: url("literata-latin-wght-italic.woff2") format("woff2");
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
