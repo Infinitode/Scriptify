@@ -148,13 +148,29 @@ class Api:
         self.is_fullscreen = not self.is_fullscreen
         self._window.toggle_fullscreen()
 
+    def report_progress(self, progress):
+        """Best-effort progress update for the startup window."""
+        try:
+            if self._window:
+                self._window.evaluate_js(f"updateProgressBar({progress})")
+        except Exception as error:
+            print(f"Could not update the progress bar: {error}")
+
     def download_model(self, model_name):
         global model
         try:
+            self.report_progress(0.06)
             model = whisper.load_model(model_name, download_root=os.environ["WHISPER_DOWNLOAD_DIR"])
+            self.report_progress(0.92)
             launch_application()
         except Exception as e:
             print(f"Error loading model: {e}")
+            try:
+                if self._window:
+                    self._window.evaluate_js(
+                        f"displayText({escape_java_script_string('The model could not be downloaded. Check your connection and try again.')})")
+            except Exception as progress_error:
+                print(f"Could not report the download failure: {progress_error}")
 
     def display_text(self, text):
         self._window.evaluate_js(f"displayText({escape_java_script_string(text)})")
