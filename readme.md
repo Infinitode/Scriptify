@@ -16,6 +16,11 @@ Visit our website for screenshots/minimum requirements, and supported platforms:
 - **Autosave & Backup:** The active story is saved automatically, with a separate desktop safety snapshot every 10 minutes.
 - **No Limits:** Scriptify is 100% free, with no limits or ads.
 
+## Changelog `v1.2.0-beta`:
+
+- Refreshed the writing studio with reading mode, writing metrics, formatting tools, and inspiration prompts.
+- Added an automatically saved story library with desktop application-data storage and a browser local-storage fallback.
+
 ## Changelog `v1.0.0-beta`:
 
 - Created a launch window for model selection and downloads.
@@ -35,7 +40,7 @@ Visit our website for screenshots/minimum requirements, and supported platforms:
 > sudo apt-get install p7zip-full
 > ```
 > ```bash
-> 7z x scriptify_ubuntu_v1_0_0_beta.zip
+> 7z x scriptify_ubuntu_v1_2_0_beta.zip
 > ```
 
 > [!NOTE]
