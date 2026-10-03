@@ -29,7 +29,7 @@ If applicable, add screenshots to help explain your problem.
 **Desktop (please complete the following information):**
  - OS: [e.g. Windows]
  - OS version: [e.g. Windows 11 (x64)]
- - Release: [e.g. Version 1.0.0]
+ - Release: [e.g. Version 1.2.0]
  - Python (if relevant): [e.g. 3.13]
  - Dependencies (if relevant): [e.g. numpy==1.26.4, tensorflow==2.x]
  - Environment (if relevant): [e.g. Docker, virtual environment, or native installation]

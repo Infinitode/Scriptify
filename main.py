@@ -11,6 +11,7 @@ import threading
 import whisper  # Whisper for speech-to-text processing
 import queue
 import json  # Import json for safe string handling
+import uuid
 import sounddevice as sd  # For audio recording
 import numpy as np
 from scipy.io.wavfile import write  # To handle audio format conversion
@@ -18,7 +19,8 @@ from docx import Document
 from docx.shared import Pt
 from fpdf import FPDF
 from datetime import datetime
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, NavigableString, Tag
+import html as html_lib
 from whisper.utils import get_writer
 
 # Transcription queue for thread communication
@@ -204,9 +206,9 @@ class Api:
             try:
                 # Get the content of <h1> and <p> elements from the webview
                 title_html = self._window.evaluate_js(
-                    'document.querySelector(".text h1").innerHTML')
+                    'document.querySelector("#Title").innerHTML')
                 content_html = self._window.evaluate_js(
-                    'document.querySelector(".text p").innerHTML')
+                    'document.querySelector("#transcribedText").innerHTML')
 
                 # Use BeautifulSoup to handle the HTML content and preserve formatting
                 title = self._parse_html_to_text(title_html)
@@ -225,7 +227,8 @@ class Api:
                         json.dump(data, file, indent=1)
 
                 elif file_extension == ".md":
-                    data = f"# {title}\n\n{content}"
+                    markdown_content = self._parse_html_to_markdown(content_html)
+                    data = f"# {title}\n\n{markdown_content}\n"
                     with open(file_path, 'w', encoding='utf-8') as file:
                         file.write(data)
 
@@ -235,7 +238,12 @@ class Api:
                         file.write(data)
 
                 elif file_extension == ".html":
-                    data = f"<h1>{title}</h1>\n<p>{content}</p>"
+                    data = (
+                        "<!doctype html>\n<html lang=\"en\">\n<head>"
+                        "<meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
+                        f"<title>{html_lib.escape(title)}</title></head>\n<body>"
+                        f"<h1>{html_lib.escape(title)}</h1>\n{content_html}\n</body></html>"
+                    )
                     with open(file_path, 'w', encoding='utf-8') as file:
                         file.write(data)
 
@@ -259,9 +267,9 @@ class Api:
             try:
                 # Get the content of <h1> and <p> elements from the webview
                 title = self._window.evaluate_js(
-                    'document.querySelector(".text h1").innerHTML')
+                    'document.querySelector("#Title").innerHTML')
                 content = self._window.evaluate_js(
-                    'document.querySelector(".text p").innerHTML')
+                    'document.querySelector("#transcribedText").innerHTML')
 
                 # Create a dictionary with the title and content
                 data = {
@@ -281,15 +289,15 @@ class Api:
         try:
             # Get the content of <h1> and <p> elements from the webview
             title_html = self._window.evaluate_js(
-                'document.querySelector(".text h1").innerHTML')
+                'document.querySelector("#Title").innerHTML')
             content_html = self._window.evaluate_js(
-                'document.querySelector(".text p").innerHTML')
+                'document.querySelector("#transcribedText").innerHTML')
             # Use BeautifulSoup to handle the HTML content and preserve formatting
             title = self._parse_html_to_text(title_html)
             content = self._parse_html_to_text(content_html)
 
             # Sanitize the title for the backup filename
-            sanitized_title = title.strip().replace(" ", "_")  # Replace spaces with underscores
+            sanitized_title = "_".join("".join(char for char in title.strip() if char.isalnum() or char in "-_ ").split()) or "Untitled"
 
             # Create the backup filename based on the title and timestamp
             # Get the current date and time
@@ -302,8 +310,8 @@ class Api:
 
             # Prepare the data to be saved
             data = {
-                "title": title,
-                "content": content
+                "title": title_html,
+                "content": content_html
             }
 
             # Save the data to the file as JSON
@@ -316,6 +324,166 @@ class Api:
 
         except Exception as e:
             return f"Error during auto backup: {e}"
+
+    def _story_directory(self):
+        """Return the per-user application-data directory for automatic drafts."""
+        if sys.platform.startswith("win"):
+            data_root = os.environ.get("APPDATA") or os.path.expanduser("~/AppData/Roaming")
+        elif sys.platform == "darwin":
+            data_root = os.path.expanduser("~/Library/Application Support")
+        else:
+            data_root = os.environ.get("XDG_DATA_HOME") or os.path.expanduser("~/.local/share")
+        directory = os.path.join(data_root, "Scriptify", "stories")
+        os.makedirs(directory, exist_ok=True)
+        return directory
+
+    def _normalise_story_id(self, story_id):
+        try:
+            return str(uuid.UUID(str(story_id)))
+        except (ValueError, TypeError, AttributeError):
+            return None
+
+    def _story_path(self, story_id):
+        canonical_id = self._normalise_story_id(story_id)
+        if not canonical_id:
+            return None
+        return os.path.join(self._story_directory(), f"{canonical_id}.json")
+
+    def _read_story(self, story_id):
+        path = self._story_path(story_id)
+        if not path or not os.path.isfile(path):
+            return None
+        with open(path, "r", encoding="utf-8") as story_file:
+            story = json.load(story_file)
+        if not isinstance(story, dict):
+            return None
+        story["id"] = self._normalise_story_id(story.get("id")) or self._normalise_story_id(story_id)
+        story.setdefault("name", "Untitled story")
+        story.setdefault("title", "")
+        story.setdefault("content", "")
+        story.setdefault("createdAt", story.get("updatedAt") or datetime.now().astimezone().isoformat(timespec="milliseconds"))
+        story.setdefault("updatedAt", story["createdAt"])
+        return story
+
+    def _write_story(self, story):
+        path = self._story_path(story.get("id"))
+        if not path:
+            raise ValueError("Invalid story ID.")
+        temporary_path = f"{path}.{uuid.uuid4().hex}.tmp"
+        try:
+            with open(temporary_path, "w", encoding="utf-8") as story_file:
+                json.dump(story, story_file, ensure_ascii=False, indent=2)
+            os.replace(temporary_path, path)
+        finally:
+            if os.path.exists(temporary_path):
+                os.remove(temporary_path)
+
+    def _story_metadata(self, story):
+        content_text = self._parse_html_to_text(story.get("content", ""))
+        return {
+            "id": story.get("id"),
+            "name": story.get("name") or "Untitled story",
+            "createdAt": story.get("createdAt"),
+            "updatedAt": story.get("updatedAt"),
+            "preview": content_text[:180]
+        }
+
+    def list_stories(self):
+        """List saved drafts, newest edited first, without loading full document bodies."""
+        try:
+            stories = []
+            for filename in os.listdir(self._story_directory()):
+                if not filename.endswith(".json"):
+                    continue
+                story_id = filename[:-5]
+                try:
+                    story = self._read_story(story_id)
+                    if story:
+                        stories.append(self._story_metadata(story))
+                except (OSError, json.JSONDecodeError, ValueError) as error:
+                    print(f"Skipping unreadable story {filename}: {error}")
+            stories.sort(key=lambda story: story.get("updatedAt") or "", reverse=True)
+            return stories
+        except Exception as error:
+            print(f"Unable to list saved stories: {error}")
+            return {"ok": False, "error": str(error)}
+
+    def load_story(self, story_id):
+        """Load a full automatic draft from application data."""
+        try:
+            return self._read_story(story_id)
+        except (OSError, json.JSONDecodeError, ValueError) as error:
+            print(f"Unable to load story {story_id}: {error}")
+            return None
+
+    def save_story(self, story_id, name, title, content, created_at=None):
+        """Automatically save a rich-text draft under the user's application data."""
+        try:
+            canonical_id = self._normalise_story_id(story_id)
+            if not canonical_id:
+                raise ValueError("Invalid story ID.")
+            previous = self._read_story(canonical_id) or {}
+            timestamp = datetime.now().astimezone().isoformat(timespec="milliseconds")
+            safe_name = str(name or "Untitled story").strip()[:160] or "Untitled story"
+            story = {
+                "id": canonical_id,
+                "name": safe_name,
+                "title": str(title or ""),
+                "content": str(content or ""),
+                "createdAt": previous.get("createdAt") or created_at or timestamp,
+                "updatedAt": timestamp
+            }
+            self._write_story(story)
+            return {"ok": True, "story": self._story_metadata(story)}
+        except Exception as error:
+            print(f"Unable to save story {story_id}: {error}")
+            return {"ok": False, "error": str(error)}
+
+    def rename_story(self, story_id, name):
+        try:
+            story = self._read_story(story_id)
+            if not story:
+                return {"ok": False, "error": "Story not found."}
+            safe_name = str(name or "").strip()[:160]
+            if not safe_name:
+                return {"ok": False, "error": "A story name is required."}
+            story["name"] = safe_name
+            story["title"] = html_lib.escape(safe_name)
+            story["updatedAt"] = datetime.now().astimezone().isoformat(timespec="milliseconds")
+            self._write_story(story)
+            return {"ok": True, "story": self._story_metadata(story)}
+        except Exception as error:
+            return {"ok": False, "error": str(error)}
+
+    def duplicate_story(self, story_id):
+        try:
+            original = self._read_story(story_id)
+            if not original:
+                return {"ok": False, "error": "Story not found."}
+            timestamp = datetime.now().astimezone().isoformat(timespec="milliseconds")
+            copy_name = f"Copy of {original.get('name') or 'Untitled story'}"[:160]
+            copy = {
+                **original,
+                "id": str(uuid.uuid4()),
+                "name": copy_name,
+                "title": html_lib.escape(copy_name),
+                "createdAt": timestamp,
+                "updatedAt": timestamp
+            }
+            self._write_story(copy)
+            return {"ok": True, "story": copy}
+        except Exception as error:
+            return {"ok": False, "error": str(error)}
+
+    def delete_story(self, story_id):
+        try:
+            path = self._story_path(story_id)
+            if not path or not os.path.isfile(path):
+                return {"ok": False, "error": "Story not found."}
+            os.remove(path)
+            return {"ok": True}
+        except Exception as error:
+            return {"ok": False, "error": str(error)}
 
     # Method to load content from a .scriptify file
     def load_content(self):
@@ -339,7 +507,7 @@ class Api:
 
                 # Use JSON.stringify to safely inject text content in JavaScript
                 self._window.evaluate_js(f'''
-                    document.querySelector(".text h1").innerHTML = JSON.stringify({json.dumps(title)}).replace(/^"|"$/g, '');
+                    document.querySelector("#Title").innerHTML = JSON.stringify({json.dumps(title)}).replace(/^"|"$/g, '');
                     document.querySelector("#transcribedText").innerHTML = JSON.stringify({json.dumps(content)}).replace(/^"|"$/g, '');
                 ''')
 
@@ -377,23 +545,76 @@ class Api:
         self.update_timer(0)  # Reset the UI to show the timer has stopped
 
     def _parse_html_to_text(self, html):
-        """
-        Parse HTML and convert it to plain text while preserving whitespace, line breaks, etc.
-        """
-        soup = BeautifulSoup(html, 'html.parser')
+        """Convert editor HTML to readable plain text without flattening blocks."""
+        soup = BeautifulSoup(html or "", 'html.parser')
 
-        # Replace <br> and <p> tags with line breaks to preserve structure
         for br in soup.find_all("br"):
             br.replace_with("\n")
-        for p in soup.find_all("p"):
-            p.insert_before("\n")
-            p.append("\n")
-        for h in soup.find_all("h2"):
-            h.insert_before("\n")
-            h.append("\n")
+        for item in soup.find_all("li"):
+            item.insert_before("\n- ")
+            item.append("\n")
+        for block in soup.find_all(["p", "h2", "h3", "h4", "blockquote"]):
+            block.insert_before("\n")
+            block.append("\n")
 
-        # Return text with preserved whitespace and structure
-        return soup.get_text()
+        text = soup.get_text().replace("\xa0", " ")
+        lines = [line.rstrip() for line in text.splitlines()]
+        return "\n".join(lines).strip()
+
+    def _parse_html_to_markdown(self, html):
+        """Convert the editor's supported rich-text markup to simple Markdown."""
+        soup = BeautifulSoup(html or "", 'html.parser')
+
+        def render(node):
+            if isinstance(node, NavigableString):
+                return str(node)
+            if not isinstance(node, Tag):
+                return ""
+
+            name = (node.name or "").lower()
+            if name == "br":
+                return "\n"
+            if name in ("ul", "ol"):
+                items = node.find_all("li", recursive=False)
+                lines = []
+                for index, item in enumerate(items, start=1):
+                    marker = "- " if name == "ul" else f"{index}. "
+                    lines.append(marker + "".join(render(child) for child in item.children).strip())
+                return "\n\n" + "\n".join(lines) + "\n\n"
+
+            children = "".join(render(child) for child in node.children)
+            if name in ("strong", "b"):
+                return f"**{children}**"
+            if name in ("em", "i"):
+                return f"*{children}*"
+            if name == "u":
+                return f"_{children}_"
+            if name in ("s", "strike", "del"):
+                return f"~~{children}~~"
+            if name == "blockquote":
+                quoted = "\n".join("> " + line for line in children.strip().splitlines())
+                return f"\n\n{quoted}\n\n"
+            if name in ("h2", "h3", "h4"):
+                level = int(name[1])
+                return f"\n\n{'#' * level} {children.strip()}\n\n"
+            if name in ("p", "div"):
+                return f"\n\n{children.strip()}\n\n"
+            if name == "li":
+                return children
+            return children
+
+        markdown = render(soup)
+        lines = [line.rstrip() for line in markdown.replace("\xa0", " ").splitlines()]
+        while lines and not lines[0].strip():
+            lines.pop(0)
+        while lines and not lines[-1].strip():
+            lines.pop()
+        compact = []
+        for line in lines:
+            if not line.strip() and compact and not compact[-1].strip():
+                continue
+            compact.append(line)
+        return "\n".join(compact)
 
     def _export_to_word(self, file_path, title, content):
         # Create a Word document
@@ -435,7 +656,7 @@ class Api:
 
 def launch_application():
     window = webview.create_window('Scriptify', 'index.html', js_api=api, width=1280, height=800,
-                                   resizable=True, min_size=(1000, 600), background_color='#ffffff', frameless=True, easy_drag=False)
+                                   resizable=True, min_size=(1000, 600), background_color='#11110f', frameless=True, easy_drag=False)
     api.set_window(window)
     webview.windows[0].destroy()
 
@@ -541,6 +762,6 @@ if __name__ == '__main__':
     model = None
     api = Api()
     window = webview.create_window('Scriptify Startup', 'launch.html', js_api=api, width=800, height=600,
-                                   resizable=True, min_size=(800, 600), background_color='#ffffff', frameless=True, easy_drag=False)
+                                   resizable=True, min_size=(800, 600), background_color='#11110f', frameless=True, easy_drag=False)
     api.set_window(window)
     webview.start()

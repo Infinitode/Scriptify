@@ -1,81 +1,116 @@
-let transcribing = false; // Keep track of whether transcription is on or off
+let transcribing = false;
 
-// Toggle transcription on/off
-function toggleTranscription() {
-  if (!transcribing) {
-    // Start transcription
-    window.pywebview.api.start_transcription().then((response) => {
-      console.log(response);
+async function toggleTranscription() {
+  const button = document.getElementById("transcribe");
+  const timer = document.getElementById("timer");
+  const api = getNativeApi();
+
+  if (!api || typeof api.start_transcription !== "function") {
+    displayMessage("Voice transcription is available in the desktop app.");
+    return;
+  }
+
+  button.disabled = true;
+  try {
+    if (!transcribing) {
+      const response = await Promise.resolve(api.start_transcription());
       transcribing = true;
-      document.getElementById("transcribe").innerHTML =
-        '<i class="bi bi-mic-mute-fill color"></i>';
-      document.getElementById("timer").innerHTML = "Listening...";
-    });
-  } else {
-    // Stop transcription
-    window.pywebview.api.stop_transcription().then((response) => {
-      console.log(response);
-      transcribing = false;
-      document.getElementById("transcribe").innerHTML =
-        '<i class="bi bi-mic-fill"></i>';
-      document.getElementById("timer").innerHTML = "Not listening";
-    });
-  }
-}
-
-function updateTimer(remainingTime, isRunning) {
-  const timerElement = document.getElementById("timer"); // Ensure this ID matches your HTML
-
-  if (remainingTime > 0) {
-    // Timer is still counting down
-    timerElement.innerHTML = `Listening... ${remainingTime}s remaining`;
-  } else {
-    // Timer has finished, waiting for the next interval
-    timerElement.innerHTML = `Not listening`;
-  }
-}
-
-// Helper function to save the current caret position
-function saveSelection1() {
-    const selection = window.getSelection();
-    if (selection.rangeCount > 0) {
-      return selection.getRangeAt(0).cloneRange();
-    }
-    return null;
-  }
-
-  // Helper function to restore the saved caret position
-  function restoreSelection1(range) {
-    if (range) {
-      const selection = window.getSelection();
-      selection.removeAllRanges();
-      selection.addRange(range);
-    }
-  }
-
-  function updateTranscribedText(text) {
-    const selection = window.getSelection();
-    const range = saveSelection1(); // Save the current selection/caret position
-
-    if (range && selection.rangeCount > 0) {
-      // Insert the transcribed text
-      if (!selection.isCollapsed) {
-        range.deleteContents(); // Remove the selected text if any
-      }
-
-      // Create a new text node with the transcribed text and insert it at the caret position
-      const newTextNode = document.createTextNode(text);
-      range.insertNode(newTextNode);
-
-      // Move the caret to the end of the inserted text node
-      range.setStartAfter(newTextNode);
-      range.setEndAfter(newTextNode);
-
-      // Restore the selection with the updated caret position
-      restoreSelection1(range);
+      button.classList.add("is-listening");
+      button.setAttribute("aria-label", "Stop voice transcription");
+      button.title = "Stop voice transcription";
+      timer.classList.add("is-listening");
+      timer.textContent = "Listening…";
+      if (response) console.log(response);
     } else {
-      // If no selection, append the transcribed text at the end of a specific element
-      const transcribedElement = document.getElementById("transcribedText");
-      transcribedElement.appendChild(document.createTextNode(text));
+      const response = await Promise.resolve(api.stop_transcription());
+      transcribing = false;
+      button.classList.remove("is-listening");
+      button.setAttribute("aria-label", "Start voice transcription");
+      button.title = "Start voice transcription";
+      timer.classList.remove("is-listening");
+      timer.textContent = "Ready to dictate";
+      if (response) console.log(response);
     }
+  } catch (error) {
+    console.error("Transcription error:", error);
+    displayMessage("Voice transcription could not be started.", "error");
+    transcribing = false;
+    button.classList.remove("is-listening");
+    timer.classList.remove("is-listening");
+    timer.textContent = "Ready to dictate";
+  } finally {
+    button.disabled = false;
   }
+}
+
+document.getElementById("transcribe").addEventListener("click", toggleTranscription);
+
+function updateTimer(remainingTime) {
+  const timer = document.getElementById("timer");
+  if (!timer) return;
+  if (transcribing && remainingTime > 0) {
+    timer.textContent = `Listening · ${remainingTime}s`;
+    timer.classList.add("is-listening");
+  } else if (transcribing) {
+    timer.textContent = "Processing speech…";
+  } else {
+    timer.textContent = "Ready to dictate";
+    timer.classList.remove("is-listening");
+  }
+}
+
+function saveSelection1() {
+  return saveSelection() || savedEditorRange;
+}
+
+function restoreSelection1(range) {
+  if (!range) return;
+  contentEditor.focus();
+  restoreSelection(range);
+}
+
+function updateTranscribedText(text) {
+  const value = String(text || "").trim();
+  if (!value || document.body.classList.contains("reader-mode")) return;
+
+  let range = saveSelection1();
+  if (!range) {
+    range = document.createRange();
+    range.selectNodeContents(contentEditor);
+    range.collapse(false);
+  }
+
+  const node = range.commonAncestorContainer;
+  const target = node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement;
+  if (!target || !contentEditor.contains(target)) {
+    range = document.createRange();
+    range.selectNodeContents(contentEditor);
+    range.collapse(false);
+  }
+
+  const selection = window.getSelection();
+  if (!range.collapsed) range.deleteContents();
+
+  const paragraph = range.startContainer.nodeType === Node.ELEMENT_NODE
+    ? range.startContainer.closest && range.startContainer.closest("p, h2, h3, h4, blockquote, li")
+    : range.startContainer.parentElement && range.startContainer.parentElement.closest("p, h2, h3, h4, blockquote, li");
+
+  if (paragraph && contentEditor.contains(paragraph)) {
+    const needsSpace = range.startOffset > 0 && !/\s$/.test(range.startContainer.textContent || "");
+    const chunk = document.createTextNode(`${needsSpace ? " " : ""}${value}`);
+    range.insertNode(chunk);
+    range.setStartAfter(chunk);
+    range.collapse(true);
+  } else {
+    const block = document.createElement("p");
+    block.textContent = value;
+    range.insertNode(block);
+    range.setStart(block, 1);
+    range.collapse(true);
+  }
+
+  selection.removeAllRanges();
+  selection.addRange(range);
+  savedEditorRange = range.cloneRange();
+  contentEditor.dispatchEvent(new Event("input", { bubbles: true }));
+}

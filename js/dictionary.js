@@ -1,127 +1,109 @@
-document.addEventListener('keydown', function(event) {
-    if (event.ctrlKey && event.key === 'd') {
-        event.preventDefault();
-        const selectedWord = getSelectedText().trim();
-        if (selectedWord) {
-            fetchDictionaryDefinition(selectedWord);
-        }
-    }
-    if (event.ctrlKey && event.key === 's') {
-        event.preventDefault();
-        save_file();
-    }
-    if (event.ctrlKey && event.key === 'o') {
-        event.preventDefault();
-        open_file();
-    }
-    if (event.ctrlKey && event.key === 'e') {
-        event.preventDefault();
-        export_file();
-    }
-    if (event.ctrlKey && event.key === 'r') {
-        event.preventDefault();
-        randomBtn.click();
-    }
-});
-
-// Function to get selected text
 function getSelectedText() {
-    if (window.getSelection) {
-        return window.getSelection().toString();
-    }
-    return '';
+  return window.getSelection ? window.getSelection().toString() : "";
 }
 
-// Fetch word definition from the Dictionary API
 async function fetchDictionaryDefinition(word) {
-    const url = `https://api.dictionaryapi.dev/api/v2/entries/en/${word}`;
-    try {
-        const response = await fetch(url);
-        const data = await response.json();
-        displayDictionaryData(data);
-    } catch (error) {
-        displayMessage('<i class="bi bi-exclamation-triangle-fill"></i> Error fetching dictionary data.');
-        console.error(error);
+  const cleanWord = String(word || "").trim();
+  if (!cleanWord) return;
+
+  try {
+    const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(cleanWord)}`);
+    const data = await response.json();
+    if (!response.ok || !Array.isArray(data) || !data.length) {
+      displayMessage(`No definition found for “${cleanWord}”.`);
+      return;
     }
+    displayDictionaryData(data);
+  } catch (error) {
+    console.error("Dictionary lookup failed:", error);
+    displayMessage("The dictionary could not be reached. Check your connection.", "error");
+  }
 }
 
-// Function to display the dictionary data
 function displayDictionaryData(data) {
-    if (!data || data.length === 0) {
-        alert('No definition found');
-        return;
-    }
+  if (!Array.isArray(data) || !data.length) {
+    displayMessage("No definition was found for that word.");
+    return;
+  }
 
-    const wordData = data[0]; // Take the first entry for now
-    document.getElementById('dictWord').innerText = wordData.word || 'N/A';
-    document.getElementById('phonetic').innerText = wordData.phonetic || wordData.phonetics[0]?.text || 'N/A';
+  const wordData = data[0];
+  document.getElementById("dictWord").textContent = wordData.word || "Word";
+  const phonetic = wordData.phonetic || (wordData.phonetics || []).find((entry) => entry.text)?.text || "Not available";
+  document.getElementById("phonetic").textContent = phonetic;
 
-    // Clear previous definitions, synonyms, and antonyms
-    const definitionsDiv = document.getElementById('definitions');
-    const synonymsDiv = document.getElementById('synonyms');
-    const antonymsDiv = document.getElementById('antonyms');
+  const definitions = document.getElementById("definitions");
+  definitions.replaceChildren();
+  const synonyms = new Set();
+  const antonyms = new Set();
 
-    definitionsDiv.innerHTML = '';
-    synonymsDiv.innerHTML = '';
-    antonymsDiv.innerHTML = '';
+  data.forEach((entry) => {
+    (entry.meanings || []).forEach((meaning) => {
+      const card = document.createElement("section");
+      card.className = "dictionary-definition";
+      const heading = document.createElement("h3");
+      heading.textContent = meaning.partOfSpeech || "Definition";
+      card.appendChild(heading);
 
-    let allSynonyms = new Set();
-    let allAntonyms = new Set();
+      (meaning.definitions || []).slice(0, 4).forEach((definition) => {
+        const definitionLine = document.createElement("p");
+        definitionLine.textContent = definition.definition || "No definition text available.";
+        card.appendChild(definitionLine);
+        if (definition.example) {
+          const example = document.createElement("p");
+          example.className = "example";
+          example.textContent = `“${definition.example}”`;
+          card.appendChild(example);
+        }
+      });
 
-    // Process all meanings
-    data.forEach(entry => {
-        entry.meanings.forEach(meaning => {
-            var c1 = document.createElement('div');
-            c1.classList.add('card');
-            // Create part of speech heading
-            const partOfSpeech = document.createElement('h3');
-            partOfSpeech.textContent = meaning.partOfSpeech;
-            c1.appendChild(partOfSpeech);
-
-            // Process each definition for this part of speech
-            meaning.definitions.forEach(def => {
-                const defElement = document.createElement('p');
-                defElement.innerHTML = `<strong>Definition:</strong> ${def.definition}`;
-                c1.appendChild(defElement);
-
-                // Check if example exists and append it
-                if (def.example) {
-                    const exampleElement = document.createElement('p');
-                    exampleElement.innerHTML = `<em>Example:</em> ${def.example}`;
-                    c1.appendChild(exampleElement);
-                }
-            });
-
-            // Collect synonyms and antonyms from this meaning
-            if (meaning.synonyms && meaning.synonyms.length > 0) {
-                meaning.synonyms.forEach(synonym => allSynonyms.add(synonym));
-            }
-
-            if (meaning.antonyms && meaning.antonyms.length > 0) {
-                meaning.antonyms.forEach(antonym => allAntonyms.add(antonym));
-            }
-
-            definitionsDiv.appendChild(c1);
-        });
+      (meaning.synonyms || []).forEach((word) => synonyms.add(word));
+      (meaning.antonyms || []).forEach((word) => antonyms.add(word));
+      definitions.appendChild(card);
     });
+  });
 
-    // Display collected synonyms and antonyms (if any)
-    synonymsDiv.innerText = allSynonyms.size > 0 ? Array.from(allSynonyms).join(", ") : 'None';
-    antonymsDiv.innerText = allAntonyms.size > 0 ? Array.from(allAntonyms).join(", ") : 'None';
-
-    // Show the dictionary popup
-    document.getElementById('dictionaryPopup').style.transform = 'scale(1)';
+  document.getElementById("synonyms").textContent = synonyms.size ? Array.from(synonyms).slice(0, 14).join(", ") : "None listed";
+  document.getElementById("antonyms").textContent = antonyms.size ? Array.from(antonyms).slice(0, 14).join(", ") : "None listed";
+  const popup = document.getElementById("dictionaryPopup");
+  popup.classList.add("show");
+  popup.setAttribute("aria-hidden", "false");
+  popup.inert = false;
+  if (typeof hideIdeaCard === "function") hideIdeaCard();
+  const appShell = document.querySelector(".app-shell");
+  if (appShell) appShell.inert = true;
+  document.getElementById("closePopup").focus();
 }
 
-// Close dictionary popup
-document.getElementById('closePopup').addEventListener('click', function() {
-    document.getElementById('dictionaryPopup').style.transform = 'scale(0)';
+function closeDictionary() {
+  const popup = document.getElementById("dictionaryPopup");
+  const restoreFocus = popup.contains(document.activeElement);
+  popup.classList.remove("show");
+  popup.setAttribute("aria-hidden", "true");
+  popup.inert = true;
+  const appShell = document.querySelector(".app-shell");
+  if (appShell) appShell.inert = false;
+  if (restoreFocus) document.getElementById("dictionaryButton").focus();
+}
+
+document.getElementById("closePopup").addEventListener("click", closeDictionary);
+document.getElementById("dictionaryPopup").addEventListener("click", (event) => {
+  if (event.target.id === "dictionaryPopup") closeDictionary();
+});
+document.getElementById("dictionaryButton").addEventListener("mousedown", (event) => event.preventDefault());
+document.getElementById("dictionaryButton").addEventListener("click", () => {
+  const word = getSelectedText().trim();
+  if (!word) {
+    displayMessage("Select a word in your draft to look it up.");
+    return;
+  }
+  fetchDictionaryDefinition(word);
 });
 
-// Handle dictionary button click in bottom bar (if applicable)
-document.getElementById('dictionaryButton')?.addEventListener('click', function() {
-    const selectedWord = getSelectedText().trim();
-    if (selectedWord) {
-        fetchDictionaryDefinition(selectedWord);
-    }
+document.addEventListener("keydown", (event) => {
+  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "d") {
+    event.preventDefault();
+    const word = getSelectedText().trim();
+    if (word) fetchDictionaryDefinition(word);
+    else displayMessage("Select a word in your draft to look it up.");
+  }
 });

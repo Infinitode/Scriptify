@@ -4,146 +4,270 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scriptify</title>
+    <meta name="theme-color" content="#11110f">
+    <title>Scriptify — Writing studio</title>
     <link rel="shortcut icon" href="web/favicon.ico" type="image/x-icon">
     <link rel="apple-touch-icon" href="web/apple-touch-icon.png">
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-    <div class="info-popup">
-        <div class="flex c">
-            <h1>Info</h1>
-            <div class="space"></div>
-            <i class="bi bi-x"></i>
-        </div>
-        <div class="card">
-            <p><i class="bi bi-alarm-fill"></i> Reading time:</p>
-            <p class="output" id="reading-time"></p>
-        </div>
-        <div class="card">
-            <p><i class="bi bi-fonts"></i> Character count:</p>
-            <p class="output" id="character-count"></p>
-        </div>
-        <div class="card">
-            <p><i class="bi bi-input-cursor-text"></i> Word count:</p>
-            <p class="output" id="word-count"></p>
-        </div>
-        <div class="card">
-            <p><i class="bi bi-text-left"></i> Sentence count:</p>
-            <p class="output" id="sentence-count"></p>
-        </div>
-        <div class="card">
-            <p><i class="bi bi-blockquote-left"></i> Average sentence length:</p>
-            <p class="output" id="avg-sentence-length"></p>
-        </div>
-        <div class="card">
-            <p><i class="bi bi-paragraph"></i> Vocabulary variety:</p>
-            <svg class="circular-progress" width="100" height="100" viewBox="0 0 100 100">
-                <!-- Background Circle -->
-                <circle class="circle-bg" cx="50" cy="50" r="40"/>
-                <!-- Progress Circle -->
-                <circle class="circle-progress" id="vocab-var-p" cx="50" cy="50" r="40"/>
-              </svg>
-            <p class="output" id="vocabulary-variety"></p>
-        </div>
-        <div class="card">
-            <p><i class="bi bi-eye-fill"></i> Flesch Score:</p>
-            <svg class="circular-progress" width="100" height="100" viewBox="0 0 100 100">
-                <!-- Background Circle -->
-                <circle class="circle-bg" cx="50" cy="50" r="40"/>
-                <!-- Progress Circle -->
-                <circle class="circle-progress" id="flesch-var-p" cx="50" cy="50" r="40"/>
-              </svg>
-            <p class="output" id="flesch-score"></p>
-        </div>
-    </div>
-    <div class="idea-bar">
-        <h1>Idea</h1>
-        <p>Short description prompt of the idea.</p>
-    </div>
-    <div class="popup">Warning message</div>
-    <div id="dictionaryPopup" class="dictPopup">
-        <h1 id="dictWord">Word</h1>
-        <p><strong>Phonetic:</strong> <span id="phonetic"></span></p>
-        <div id="definitions"></div>
-        <div id="synonymsAntonyms" class="card">
-            <p><strong>Synonyms:</strong> <span id="synonyms"></span></p>
-            <p><strong>Antonyms:</strong> <span id="antonyms"></span></p>
-        </div>
-        <button id="closePopup" class="button">
-            <i class="bi bi-x"></i>Close
-        </button>
-    </div>
+    <div class="app-shell">
+        <header class="window-bar pywebview-drag-region">
+            <a class="brand" href="#" aria-label="Scriptify writing studio">
+                <span class="brand-mark"><i class="bi bi-pencil-fill" aria-hidden="true"></i></span>
+                <span class="brand-copy"><strong>scriptify</strong><small>WRITING STUDIO</small></span>
+            </a>
 
-    <div class="buttons-grid pywebview-drag-region">
-        <div title="Drag zone"><i class="bi bi-hand-index"></i></div>
-        <div id="min"><i class="bi bi-dash"></i></div>
-        <div id="max"><i class="bi bi-fullscreen"></i></div>
-        <div id="close"><i class="bi bi-x"></i></div>
-    </div>
-    <div class="closer" id="closer1"><i class="bi bi-chevron-compact-left"></i></div>
-    <div class="g1-6">
-        <div class="sidebar">
-            <h1>Scriptify</h1>
-            <div class="space"></div>
-            <button class="button" id="clearbtn"><i class="bi bi-eraser-fill"></i>
-                <div class="space"></div>Clear
-            </button>
-            <button class="button" id="randombtn"><i class="bi bi-dice-5"></i>
-                <div class="space"></div>Random idea<div class="spacer"></div><div class="key">Ctrl + R</div>
-            </button>
-            <button class="button" id="infoPop"><i class="bi bi-info-square-fill"></i>
-                <div class="space"></div>Information Panel
-            </button>
-            <button class="button" onclick="open_file()"><i class="bi bi-folder2"></i>
-                <div class="space"></div>Open<div class="spacer"></div><div class="key">Ctrl + O</div>
-            </button>
-            <button class="button" onclick="save_file()"><i class="bi bi-save"></i>
-                <div class="space"></div>Save<div class="spacer"></div><div class="key">Ctrl + S</div>
-            </button>
-            <button class="button" onclick="export_file()"><i class="bi bi-box-arrow-up-right"></i>
-                <div class="space"></div>Export<div class="spacer"></div><div class="key">Ctrl + E</div>
-            </button>
-            <div class="spacer"></div>
-            <div class="flex-c">
-                Scriptify<div class="spacer"></div><div class="key">v1.0.0 Beta</div></div>
+            <div class="document-status" aria-live="polite">
+                <span class="status-dot" id="saveDot" aria-hidden="true"></span>
+                <span id="saveStatus">All changes saved</span>
+                <span class="status-divider" aria-hidden="true"></span>
+                <span class="current-document" id="topbarTitle">Untitled story</span>
+            </div>
 
-        </div>
-        <div class="content">
-            <div class="bottom-bar toolbar">
-                <div class="closer"><i class="bi bi-chevron-compact-down"></i></div>
-                <span id="words"><i class="bi bi-hash"></i> 0 words</span>
-                <button id="bold" onclick="formatText('bold')" title="Bold"><i class="bi bi-type-bold"></i></button>
-                <button id="italic" onclick="formatText('italic')" title="Italic"><i
-                        class="bi bi-type-italic"></i></button>
-                <button id="underline" onclick="formatText('underline')" title="Underline"><i
-                        class="bi bi-type-underline"></i></button>
-                <button id="heading" onclick="formatText('h1')" title="Heading"><i class="bi bi-type-h1"></i></button>
-                <button id="quote" onclick="formatText('quote')" title="Quote"><i class="bi bi-quote"></i></button>
-                <button id="dictionaryButton" title="Dictionary"><i class="bi bi-book-fill"></i></button>
-                <div class="flex-c">
-                    <button id="transcribe" onclick="toggleTranscription()" title="Transcribe"><i
-                        class="bi bi-mic-fill"></i></button>
-                <div id="timer">Not listening</div>
+            <div class="window-actions">
+                <button class="quiet-button" id="readingModeToggle" type="button" title="Enter reading mode (Ctrl+Shift+R)" aria-label="Enter reading mode" aria-pressed="false">
+                    <i class="bi bi-book" aria-hidden="true"></i><span>Read</span>
+                </button>
+                <button class="quiet-button" id="infoPop" type="button" title="Writing statistics" aria-label="Open writing statistics" aria-controls="statsPanel" aria-expanded="false">
+                    <i class="bi bi-bar-chart-line" aria-hidden="true"></i><span>Stats</span>
+                </button>
+                <div class="window-controls" aria-label="Window controls">
+                    <button id="min" type="button" title="Minimize" aria-label="Minimize window"><i class="bi bi-dash" aria-hidden="true"></i></button>
+                    <button id="max" type="button" title="Toggle fullscreen" aria-label="Toggle fullscreen"><i class="bi bi-fullscreen" aria-hidden="true"></i></button>
+                    <button id="close" class="close-window" type="button" title="Close" aria-label="Close window"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
+                </div>
+            </div>
+        </header>
+
+        <div class="app-layout" id="appLayout">
+            <aside class="sidebar" aria-label="Writing tools">
+                <div class="sidebar-section-label">WORKSPACE</div>
+                <button class="sidebar-action sidebar-action-primary" id="newDocument" type="button" title="Start a new draft">
+                    <i class="bi bi-plus-lg" aria-hidden="true"></i><span>New draft</span><kbd>Ctrl N</kbd>
+                </button>
+
+                <div class="sidebar-section-label sidebar-section-spaced">GET INSPIRED</div>
+                <button class="sidebar-action" id="randombtn" type="button" title="Generate a story idea (Ctrl+R)">
+                    <i class="bi bi-lightbulb" aria-hidden="true"></i><span>Story idea</span><kbd>Ctrl R</kbd>
+                </button>
+                <button class="sidebar-action" id="quickThoughtBtn" type="button" title="Get a first-line writing prompt">
+                    <i class="bi bi-chat-quote" aria-hidden="true"></i><span>Starting thought</span>
+                </button>
+
+                <div class="sidebar-section-label sidebar-section-spaced">YOUR DRAFT</div>
+                <button class="sidebar-action" id="openbtn" type="button" title="Open a Scriptify file (Ctrl+O)">
+                    <i class="bi bi-folder2-open" aria-hidden="true"></i><span>Open draft</span><kbd>Ctrl O</kbd>
+                </button>
+                <button class="sidebar-action" id="savebtn" type="button" title="Save a Scriptify file (Ctrl+S)">
+                    <i class="bi bi-floppy" aria-hidden="true"></i><span>Save draft</span><kbd>Ctrl S</kbd>
+                </button>
+                <button class="sidebar-action" id="exportbtn" type="button" title="Export your writing (Ctrl+E)">
+                    <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i><span>Export</span><kbd>Ctrl E</kbd>
+                </button>
+                <button class="sidebar-action sidebar-action-muted" id="clearbtn" type="button" title="Clear the current draft">
+                    <i class="bi bi-eraser" aria-hidden="true"></i><span>Clear draft</span>
+                </button>
+
+                <div class="recent-stories-heading">
+                    <button id="toggleRecent" class="recent-heading-toggle" type="button" aria-expanded="true" aria-controls="recentStoriesList">
+                        <span class="sidebar-section-label">RECENT STORIES <span class="recent-count" id="recentStoryCount">0</span></span>
+                        <i class="bi bi-chevron-down" aria-hidden="true"></i>
+                    </button>
+                    <button class="view-all-stories" id="viewAllStories" type="button">All stories</button>
+                </div>
+                <div class="recent-stories-list" id="recentStoriesList" role="region" aria-label="Recently edited stories"></div>
+
+                <div class="sidebar-spacer"></div>
+                <div class="sidebar-note">
+                    <i class="bi bi-shield-check" aria-hidden="true"></i>
+                    <span>Your stories are saved automatically on this device.</span>
+                </div>
+                <div class="sidebar-version"><span class="version-mark"></span> SCRIPTIFY <span class="version-number">v1.2.0 beta</span></div>
+            </aside>
+
+            <main class="main-content">
+                <div class="workspace-topline">
+                    <div>
+                        <div class="breadcrumb"><span>WRITING DESK</span><i class="bi bi-chevron-right" aria-hidden="true"></i><span class="breadcrumb-current">CURRENT DRAFT</span></div>
+                        <p class="workspace-heading">A quiet place to write.</p>
+                    </div>
+                    <div class="workspace-topline-note"><span class="live-indicator"></span> Your words, your pace</div>
                 </div>
 
-            </div>
-            <div class="text">
-                <h1 contenteditable="true" id="Title">Story Title</h1>
-                <p contenteditable="true" id="transcribedText">You can begin writing here. Or click the button in the
-                    bottom bar to start
-                    live transcription.
-                </p>
-            </div>
+                <section class="editor-card" aria-label="Document editor">
+                    <div class="editor-meta">
+                        <div class="draft-label"><span class="draft-icon"><i class="bi bi-file-earmark-text" aria-hidden="true"></i></span><span>Untitled draft</span><span class="meta-dot">·</span><span id="draft-word-count">0 words</span></div>
+                        <div class="editor-meta-right"><span class="autosave-label"><i class="bi bi-cloud-check" aria-hidden="true"></i><span>Saved locally</span></span></div>
+                    </div>
+
+                    <div class="editor-toolbar" role="toolbar" aria-label="Text formatting">
+                        <div class="toolbar-group history-group">
+                            <button class="toolbar-button" id="undo" type="button" title="Undo (Ctrl+Z)" aria-label="Undo"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i></button>
+                            <button class="toolbar-button" id="redo" type="button" title="Redo (Ctrl+Y)" aria-label="Redo"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i></button>
+                        </div>
+                        <span class="toolbar-divider" aria-hidden="true"></span>
+
+                        <div class="format-control">
+                            <button class="format-select" id="formatMenuToggle" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="formatMenu" title="Choose a text style">
+                                <i class="bi bi-text-paragraph" aria-hidden="true"></i><span id="currentBlockLabel">Body text</span><i class="bi bi-chevron-down format-caret" aria-hidden="true"></i>
+                            </button>
+                            <div class="format-menu" id="formatMenu" role="menu" aria-label="Text style" hidden inert>
+                                <button type="button" role="menuitem" data-format="p"><span class="format-sample sample-body">¶</span><span class="format-description"><strong>Body text</strong><small>Regular paragraph</small></span></button>
+                                <button type="button" role="menuitem" data-format="h2"><span class="format-sample sample-h1">H1</span><span class="format-description"><strong>Heading 1</strong><small>Section heading</small></span></button>
+                                <button type="button" role="menuitem" data-format="h3"><span class="format-sample sample-h2">H2</span><span class="format-description"><strong>Heading 2</strong><small>Subsection heading</small></span></button>
+                                <button type="button" role="menuitem" data-format="h4"><span class="format-sample sample-h3">H3</span><span class="format-description"><strong>Heading 3</strong><small>Small heading</small></span></button>
+                                <div class="menu-divider" role="separator"></div>
+                                <button type="button" role="menuitem" data-format="blockquote"><span class="format-sample sample-quote"><i class="bi bi-quote" aria-hidden="true"></i></span><span class="format-description"><strong>Quote</strong><small>Set words apart</small></span></button>
+                                <button type="button" role="menuitem" data-format="insertUnorderedList"><span class="format-sample"><i class="bi bi-list-ul" aria-hidden="true"></i></span><span class="format-description"><strong>Bulleted list</strong><small>Unordered list</small></span></button>
+                                <button type="button" role="menuitem" data-format="insertOrderedList"><span class="format-sample"><i class="bi bi-list-ol" aria-hidden="true"></i></span><span class="format-description"><strong>Numbered list</strong><small>Ordered list</small></span></button>
+                            </div>
+                        </div>
+
+                        <span class="toolbar-divider" aria-hidden="true"></span>
+                        <div class="toolbar-group inline-group">
+                            <button class="toolbar-button" id="bold" data-command="bold" type="button" title="Bold (Ctrl+B)" aria-label="Bold"><i class="bi bi-type-bold" aria-hidden="true"></i></button>
+                            <button class="toolbar-button" id="italic" data-command="italic" type="button" title="Italic (Ctrl+I)" aria-label="Italic"><i class="bi bi-type-italic" aria-hidden="true"></i></button>
+                            <button class="toolbar-button" id="underline" data-command="underline" type="button" title="Underline (Ctrl+U)" aria-label="Underline"><i class="bi bi-type-underline" aria-hidden="true"></i></button>
+                            <button class="toolbar-button" id="strike" data-command="strikeThrough" type="button" title="Strikethrough" aria-label="Strikethrough"><i class="bi bi-type-strikethrough" aria-hidden="true"></i></button>
+                        </div>
+
+                        <span class="toolbar-divider toolbar-divider-secondary" aria-hidden="true"></span>
+                        <div class="toolbar-group insert-group">
+                            <button class="toolbar-button" id="dictionaryButton" type="button" title="Look up selected word (Ctrl+D)" aria-label="Look up selected word"><i class="bi bi-book" aria-hidden="true"></i></button>
+                            <button class="toolbar-button microphone-button" id="transcribe" type="button" title="Start voice transcription" aria-label="Start voice transcription"><i class="bi bi-mic-fill" aria-hidden="true"></i></button>
+                            <span class="recording-status" id="timer" aria-live="polite">Ready to dictate</span>
+                        </div>
+                        <div class="toolbar-spacer"></div>
+                        <span class="toolbar-hint"><i class="bi bi-stars" aria-hidden="true"></i> Keep the first draft messy.</span>
+                    </div>
+
+                    <div class="editor-scroll" id="editorScroll" tabindex="-1" aria-label="Document reading area">
+                        <article class="paper">
+                            <div class="paper-kicker"><span>THE BEGINNING OF SOMETHING</span><span class="paper-rule"></span></div>
+                            <h1 id="Title" contenteditable="true" data-placeholder="Untitled story" aria-label="Story title" spellcheck="true"></h1>
+                            <div id="transcribedText" class="editor-body" contenteditable="true" data-placeholder="Start with a sentence, a question, or whatever is on your mind…" aria-label="Story text" spellcheck="true"></div>
+                            <div class="paper-endmark" aria-hidden="true"><span></span><i class="bi bi-asterisk"></i><span></span></div>
+                        </article>
+                    </div>
+
+                    <div class="editor-footer">
+                        <span><i class="bi bi-info-circle" aria-hidden="true"></i> Select a word to look it up, or press <kbd>Ctrl D</kbd></span>
+                        <span class="footer-shortcuts"><kbd>Ctrl B</kbd> bold <span>·</span> <kbd>Ctrl I</kbd> italic</span>
+                    </div>
+                </section>
+            </main>
         </div>
     </div>
+
+    <div class="reader-controls" id="readerControls" aria-label="Reading mode controls" aria-hidden="true" inert>
+        <div class="reader-brand"><span class="brand-mark reader-mark"><i class="bi bi-book-half" aria-hidden="true"></i></span><span><strong>Reading mode</strong><small>Take your time with the words</small></span></div>
+        <div class="reader-progress" aria-label="Reading progress"><div class="reader-progress-track"><span id="readerProgressBar"></span></div><span id="readerProgressText">0%</span></div>
+        <div class="reader-tools">
+            <button id="fontDecrease" type="button" title="Decrease reading text size" aria-label="Decrease reading text size">A−</button>
+            <button id="fontIncrease" type="button" title="Increase reading text size" aria-label="Increase reading text size">A+</button>
+            <button class="reader-exit" id="readerExit" type="button" title="Back to writing" aria-label="Back to writing"><i class="bi bi-pencil" aria-hidden="true"></i><span>Back to writing</span><kbd>Esc</kbd></button>
+        </div>
+    </div>
+
+    <section class="story-library-screen" id="storyLibraryView" aria-hidden="true" inert aria-labelledby="libraryTitle">
+        <header class="library-topbar">
+            <div class="brand library-brand" aria-label="Scriptify story library">
+                <span class="brand-mark"><i class="bi bi-pencil-fill" aria-hidden="true"></i></span>
+                <span class="brand-copy"><strong>scriptify</strong><small>YOUR STORY LIBRARY</small></span>
+            </div>
+            <div class="library-top-actions"><span id="libraryStoryCount">0 stories</span><button id="closeLibrary" class="library-back-button" type="button"><i class="bi bi-arrow-left" aria-hidden="true"></i> Back to writing</button></div>
+        </header>
+        <main class="library-main">
+            <div class="library-intro">
+                <span class="panel-eyebrow">YOUR WORK, RIGHT WHERE YOU LEFT IT</span>
+                <h1 id="libraryTitle">Your stories</h1>
+                <p>Every draft is saved automatically on this device. Pick up where you left off, or start something new.</p>
+            </div>
+            <div class="library-toolbar">
+                <label class="library-search"><i class="bi bi-search" aria-hidden="true"></i><input id="storySearch" type="search" placeholder="Find a story…" autocomplete="off" aria-label="Search your stories"></label>
+                <button class="library-new-button" id="newStoryFromLibrary" type="button"><i class="bi bi-plus-lg" aria-hidden="true"></i> New story</button>
+            </div>
+            <div class="library-table-head" aria-hidden="true"><span>STORY</span><span>STARTED</span><span>LAST EDITED</span><span></span></div>
+            <div class="library-story-list" id="libraryStoryList" aria-live="polite"></div>
+            <div class="library-empty" id="libraryEmpty" hidden>
+                <span class="empty-library-icon"><i class="bi bi-journal-richtext" aria-hidden="true"></i></span>
+                <h2>No stories found</h2>
+                <p>Try a different search, or start a new story.</p>
+                <button id="emptyLibraryNew" type="button">Start a new story</button>
+            </div>
+        </main>
+    </section>
+
+    <div class="rename-backdrop" id="renameDialog" aria-hidden="true" inert>
+        <section class="rename-dialog" role="dialog" aria-modal="true" aria-labelledby="renameTitle">
+            <div class="rename-dialog-heading"><span class="panel-eyebrow">STORY DETAILS</span><button id="renameClose" class="panel-close" type="button" aria-label="Close rename dialog"><i class="bi bi-x-lg" aria-hidden="true"></i></button></div>
+            <h2 id="renameTitle">Rename story</h2>
+            <p>Choose a name that helps you find this story again.</p>
+            <label class="rename-input-label" for="renameInput">Story name</label>
+            <input id="renameInput" type="text" maxlength="160" autocomplete="off" placeholder="Untitled story">
+            <div class="rename-dialog-actions"><button id="renameCancel" type="button">Cancel</button><button class="confirm-rename" id="renameSave" type="button">Save name</button></div>
+        </section>
+    </div>
+
+    <div class="stats-backdrop" id="statsBackdrop" aria-hidden="true"></div>
+    <aside class="stats-panel" id="statsPanel" role="dialog" aria-modal="true" aria-labelledby="statsTitle" aria-hidden="true" inert>
+        <div class="panel-heading">
+            <div><span class="panel-eyebrow">YOUR DRAFT, IN NUMBERS</span><h2 id="statsTitle">Writing stats</h2></div>
+            <button class="panel-close" id="statsClose" type="button" aria-label="Close writing statistics"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
+        </div>
+        <p class="panel-intro">A little perspective on the words taking shape.</p>
+        <div class="stats-overview">
+            <div class="overview-label"><i class="bi bi-textarea-t" aria-hidden="true"></i> WORDS</div>
+            <strong class="overview-value" id="word-count">0</strong>
+            <div class="overview-footer"><span id="paragraph-count">0 paragraphs</span><span class="overview-separator">·</span><span id="heading-count">0 headings</span></div>
+        </div>
+        <div class="stats-grid">
+            <div class="stat-card"><span class="stat-label"><i class="bi bi-alarm" aria-hidden="true"></i> Reading time</span><strong class="stat-value" id="reading-time">Less than a minute</strong><span class="stat-note">At about 225 words per minute</span></div>
+            <div class="stat-card"><span class="stat-label"><i class="bi bi-fonts" aria-hidden="true"></i> Characters</span><strong class="stat-value" id="character-count">0</strong><span class="stat-note" id="character-count-no-spaces">0 without spaces</span></div>
+            <div class="stat-card"><span class="stat-label"><i class="bi bi-chat-left-text" aria-hidden="true"></i> Sentences</span><strong class="stat-value" id="sentence-count">0</strong><span class="stat-note" id="avg-sentence-length">0 words per sentence</span></div>
+            <div class="stat-card"><span class="stat-label"><i class="bi bi-collection" aria-hidden="true"></i> Unique words</span><strong class="stat-value" id="unique-word-count">0</strong><span class="stat-note" id="vocabulary-variety">0% vocabulary variety</span><div class="stat-meter"><span id="vocab-meter"></span></div></div>
+        </div>
+        <div class="readability-card">
+            <div class="readability-heading"><span><i class="bi bi-eye" aria-hidden="true"></i> Readability</span><span class="readability-badge" id="readability-label">Add a few lines</span></div>
+            <div class="readability-score-row"><strong id="flesch-score">—</strong><span>Flesch reading ease<br><small>Higher scores are easier to read</small></span></div>
+            <div class="stat-meter readability-meter"><span id="flesch-meter"></span></div>
+            <div class="readability-footer"><span id="grade-level">Reading grade: —</span><span id="avg-word-length">Avg. word: —</span></div>
+        </div>
+        <p class="stats-footnote"><i class="bi bi-lightbulb" aria-hidden="true"></i> Readability scores are estimates, not rules. Let your voice lead.</p>
+    </aside>
+
+    <section class="idea-toast" id="ideaBar" aria-live="polite" aria-hidden="true" aria-labelledby="ideaTitle" inert>
+        <div class="idea-toast-top"><span class="idea-overline"><i class="bi bi-stars" aria-hidden="true"></i> A SPARK FOR YOUR STORY</span><button class="idea-close" id="ideaClose" type="button" aria-label="Close idea"><i class="bi bi-x-lg" aria-hidden="true"></i></button></div>
+        <div class="idea-title-row"><h2 id="ideaTitle">A new beginning</h2><span class="idea-category" id="ideaCategory">IDEA</span></div>
+        <p class="idea-description" id="ideaDescription"></p>
+        <div class="opening-thought"><span><i class="bi bi-quote" aria-hidden="true"></i> STARTING THOUGHT</span><p id="ideaOpening"></p></div>
+        <div class="idea-actions"><button class="idea-next" id="nextIdea" type="button"><i class="bi bi-arrow-repeat" aria-hidden="true"></i> Another spark</button><button class="idea-use" id="useIdea" type="button"><i class="bi bi-plus-lg" aria-hidden="true"></i> Add opening to draft</button></div>
+    </section>
+
+    <div class="toast-message" id="toastMessage" role="status" aria-live="polite"></div>
+
+    <div class="dialog-backdrop" id="dictionaryPopup" aria-hidden="true" inert>
+        <section class="dictionary-dialog" role="dialog" aria-modal="true" aria-labelledby="dictWord">
+            <div class="dictionary-heading"><div><span class="panel-eyebrow">IN-APP DICTIONARY</span><h2 id="dictWord">Word</h2></div><button id="closePopup" class="panel-close" type="button" aria-label="Close dictionary"><i class="bi bi-x-lg" aria-hidden="true"></i></button></div>
+            <p class="phonetic-line"><strong>Phonetic</strong><span id="phonetic">—</span></p>
+            <div id="definitions" class="dictionary-definitions"></div>
+            <div id="synonymsAntonyms" class="synonyms-card">
+                <p><strong>Synonyms</strong><span id="synonyms">—</span></p>
+                <p><strong>Antonyms</strong><span id="antonyms">—</span></p>
+            </div>
+        </section>
+    </div>
+
+    <input type="file" id="importFile" accept=".scriptify,.json,application/json" hidden>
 
     <script src="js/dictionary.js"></script>
     <script src="js/utlities.js"></script>
     <script src="js/transcription.js"></script>
     <script src="js/extras.js"></script>
     <script src="js/information-panel.js"></script>
+    <script src="js/story-library.js"></script>
     <script src="js/auto-backup.js"></script>
 </body>
 

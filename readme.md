@@ -7,12 +7,19 @@ Visit our website for screenshots/minimum requirements, and supported platforms:
 ## Features
 
 - **Near Realtime Transcription:** Convert spoken words into text almost instantly.
-- **Intuitive Writing Experience:** Enjoy a clean, distraction-free UI, with extra statistic displays in the information panel.
-- **Text Formatting & Exporting:** Scriptify works like most other writing tools, allowing you to format your text and export in various popular formats.
-- **In-app Dictionary:** Look up words quickly and easily without leaving the app with the click of a button.
-- **Fun Starter Ideas:** Stuck with writer's block? Scriptify's fun random idea generator contains hundreds of ideas for stories that'll spark your imagination.
-- **Auto-backup:** Scriptify will automatically back-up your current file every 10 minutes, making sure that you never lose your writing progress.
+- **Focused Writing Studio:** A refreshed editor with a calmer layout, accessible formatting tools, and a dedicated reading mode with adjustable text size and reading progress.
+- **Richer Formatting & Exporting:** Use multiple heading levels, quotes, lists, and inline styles, then export your work in popular formats with structure preserved.
+- **Useful Writing Statistics:** Track word and character counts, reading time, sentence and paragraph counts, vocabulary variety, and estimated readability.
+- **In-app Dictionary:** Look up selected words quickly without leaving the editor.
+- **Ideas & Starting Thoughts:** Browse hundreds of story prompts or get a first line to help move past a blank page. Add an opening thought to your draft with one click.
+- **Automatic Story Library:** Drafts are saved to your per-user application data as you write, then appear in the sidebar and full-screen library the next time you open Scriptify. Browse start and edit dates, rename, copy, or delete stories.
+- **Autosave & Backup:** The active story is saved automatically, with a separate desktop safety snapshot every 10 minutes.
 - **No Limits:** Scriptify is 100% free, with no limits or ads.
+
+## Changelog `v1.2.0-beta`:
+
+- Refreshed the writing studio with reading mode, writing metrics, formatting tools, and inspiration prompts.
+- Added an automatically saved story library with desktop application-data storage and a browser local-storage fallback.
 
 ## Changelog `v1.0.0-beta`:
 
@@ -33,7 +40,7 @@ Visit our website for screenshots/minimum requirements, and supported platforms:
 > sudo apt-get install p7zip-full
 > ```
 > ```bash
-> 7z x scriptify_ubuntu_v1_0_0_beta.zip
+> 7z x scriptify_ubuntu_v1_2_0_beta.zip
 > ```
 
 > [!NOTE]
@@ -67,7 +74,16 @@ Run the Scriptify application file.
 - Upon launch, Scriptify will ask you to select a Whisper model to run. These models are saved to the `/models/` directory for later use, with larger models needing more computational power to run.
 - Scriptify will then download your chosen model (it may take a while depending on your internet speed) and load it. If you have previously used a model, Scriptify will load it from your file system instead of re-downloading it.
 - After downloading, the model will be loaded, and you will be redirected to the Scriptify editor, where you can type or transcribe your speech. Scriptify works just like any other writing tool, with the added benefit of real-time audio transcription.
-- You can export or save your work for later use. Scriptify will also automatically create backups of your work every so often, so you never lose your work.
+- Your current story is saved automatically. Use **Recent stories** in the sidebar to resume, rename, duplicate, or remove drafts; **All stories** opens the full library.
+- Use Export or Save draft when you want a separate file to share or archive. Scriptify also creates a desktop safety backup every 10 minutes.
+
+Automatic story files are kept in Scriptify's per-user application data folder:
+
+- Windows: `%APPDATA%/Scriptify/stories`
+- macOS: `~/Library/Application Support/Scriptify/stories`
+- Linux: `$XDG_DATA_HOME/Scriptify/stories`, or `~/.local/share/Scriptify/stories`
+
+When running in a regular browser rather than the desktop app, the library uses that browser's local storage for the current site.
 
 > [!NOTE]
 > Scriptify might take a while to launch. It has to first extract `ffmpeg` on your system to work properly. After extraction, the model selector window will launch.
