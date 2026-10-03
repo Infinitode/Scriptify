@@ -1,22 +1,21 @@
-document.addEventListener('DOMContentLoaded', function() {
-    // var timeoutDuration = 600000;
-    var timeoutDuration = 600000;
-    // Function to trigger auto backup every 10 minutes
-    function startAutoBackup() {
-        setTimeout(() => {
-            // Call the Python auto_backup method
-            window.pywebview.api.auto_backup().then((response) => {
-                displayMessage("<i class='bi bi-info-circle-fill'></i> Auto-backup saved.");
-                console.log(response); // Log the success message
-            }).catch((error) => {
-                console.error("Error during auto backup:", error);
-            });
+// The built-in story library is the primary autosave. Keep a periodic
+// desktop snapshot as a separate safety layer.
+setInterval(() => {
+  const api = getNativeApi();
+  if (!api || typeof api.auto_backup !== "function") return;
+  Promise.resolve(api.auto_backup()).catch((error) => console.error("Desktop safety backup failed:", error));
+}, 10 * 60 * 1000);
 
-            // Recursively set the timeout for continuous backups
-            startAutoBackup();
-        }, timeoutDuration); // 600,000ms = 10 minutes
-    }
+let storyExitFlushStarted = false;
+function flushStoryOnExit() {
+  if (storyExitFlushStarted || !activeStoryDirty) return;
+  storyExitFlushStarted = true;
+  if (storySaveTimer) {
+    clearTimeout(storySaveTimer);
+    storySaveTimer = null;
+  }
+  saveActiveStory(true);
+}
 
-    // Start auto backup after the page loads
-    startAutoBackup();
-});
+window.addEventListener("beforeunload", flushStoryOnExit);
+window.addEventListener("pagehide", flushStoryOnExit);

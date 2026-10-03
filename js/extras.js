@@ -2270,42 +2270,306 @@ const storyPrompts = [
     }
 ];
 
-const ideaBar = document.querySelector(".idea-bar");
-const randomBtn = document.getElementById("randombtn");
-let timer; // Variable to store the timer ID
+storyPrompts.push(
+  {
+    Title: "The Map in the Margins",
+    Category: "MYSTERY",
+    Introduction: "A paper conservator discovers tiny corrections in the margins of a century-old atlas—each one pointing to a place that was deliberately erased. The final mark leads to the conservator's own neighborhood.",
+    Opening: "The map was wrong in one place, and someone had taken the trouble to apologize for it."
+  },
+  {
+    Title: "A Museum of Almosts",
+    Category: "LITERARY",
+    Introduction: "An archivist catalogs the lives people nearly lived: the train not boarded, the letter never sent, the name never chosen. Then a new exhibit appears under her own name.",
+    Opening: "The museum had no visitors on Mondays, which was why the new room was impossible."
+  },
+  {
+    Title: "The Quiet Frequency",
+    Category: "SCI-FI",
+    Introduction: "A late-night radio host begins receiving calls from a town that vanished from every map decades ago. The callers know what will happen tomorrow—and insist the host once lived there.",
+    Opening: "At 2:17 a.m., the dead air on station WNRV started giving someone directions."
+  },
+  {
+    Title: "Borrowed Weather",
+    Category: "FANTASY",
+    Introduction: "In a city where weather can be rented by the hour, a broke apprentice meteorologist steals one clear afternoon for her rain-soaked block and accidentally borrows a storm from the wrong century.",
+    Opening: "The forecast promised twelve minutes of sunshine, and the whole street came outside."
+  },
+  {
+    Title: "Last Night at the Sun Hotel",
+    Category: "MYSTERY",
+    Introduction: "On the eve of its demolition, a fading seaside hotel hosts six former guests who all claim to have stayed in room 14. The building's plans show no such room.",
+    Opening: "Everyone checking in for the hotel's last night asked for the same room."
+  },
+  {
+    Title: "The Second Name",
+    Category: "FANTASY",
+    Introduction: "A name-restorer helps people reclaim the names stolen from their families. One day, a stranger arrives carrying a name that belongs to the restorer—and a memory she has never had.",
+    Opening: "The name on the envelope was hers, though no one had called her that in years."
+  },
+  {
+    Title: "The House That Keeps Score",
+    Category: "GOTHIC",
+    Introduction: "A caretaker inherits a house that quietly records every promise made inside it. As the walls fill with tally marks, she discovers the oldest debt is one her family forgot to collect.",
+    Opening: "By the time I arrived, the house had already counted me as a loss."
+  },
+  {
+    Title: "Small Mercies at Orbit Nine",
+    Category: "SCI-FI",
+    Introduction: "The crew of a repair station above a lonely planet keeps a handwritten ledger of tiny kindnesses. When the station loses contact with Earth, that ledger becomes their only measure of time.",
+    Opening: "Day 604 began with someone leaving a warm cup of tea beside the airlock."
+  },
+  {
+    Title: "The Orchard of Unsent Letters",
+    Category: "MAGICAL REALISM",
+    Introduction: "A postal worker finds a hidden orchard where every letter people were too afraid to send grows as a different kind of fruit. One tree is bearing a letter addressed to her younger self.",
+    Opening: "The pears tasted faintly of a sentence I had never been brave enough to finish."
+  },
+  {
+    Title: "The Good Neighbor Protocol",
+    Category: "THRILLER",
+    Introduction: "A new resident in a perfectly polite apartment building notices that every neighbor follows the same oddly specific routine. When one apartment breaks the pattern, the entire floor begins watching her.",
+    Opening: "At 8:03 every evening, all twelve doors on our floor opened at once."
+  },
+  {
+    Title: "After the Last Bell",
+    Category: "CONTEMPORARY",
+    Introduction: "A school custodian discovers a student still sitting in a classroom years after graduation. Their conversations become a quiet ritual, until the student asks for help with something neither of them can change.",
+    Opening: "The bell rang, the halls emptied, and someone was still waiting in room 23."
+  },
+  {
+    Title: "The Cartographer's Apology",
+    Category: "ADVENTURE",
+    Introduction: "A celebrated mapmaker returns to the island she removed from every chart. Her old rival is the only person willing to guide her back, and neither remembers the coastline in quite the same way.",
+    Opening: "I drew the island out of the world, but it kept sending me postcards."
+  },
+  {
+    Title: "No One Remembers Tuesday",
+    Category: "SPECULATIVE",
+    Introduction: "In a town where Tuesdays disappear from memory, a young baker starts keeping a diary and learns that the missing days are being used to hide a very ordinary crime.",
+    Opening: "On Wednesday morning, the town woke with flour on its shoes and no memory of baking."
+  },
+  {
+    Title: "The Blue Hour Archive",
+    Category: "FANTASY",
+    Introduction: "For one hour at dusk, a small archive opens to memories people have misplaced. A new volunteer finds a memory that belongs to the future—and recognizes the voice in it.",
+    Opening: "Every evening, just before dark, someone returned a memory they had not meant to lose."
+  },
+  {
+    Title: "The Substitute Ghost",
+    Category: "COMEDY",
+    Introduction: "A practical-minded ghost takes a temporary haunting job to pay off an ancient debt. The family in the house is delighted to have company, and refuses to be frightened on principle.",
+    Opening: "The haunting was meant to last three nights; the family put out a welcome mat."
+  },
+  {
+    Title: "An Honest Thief",
+    Category: "CAPER",
+    Introduction: "A meticulous pickpocket returns every stolen item anonymously—until she takes a pocket watch that keeps showing her the same impossible minute.",
+    Opening: "I always gave the wallets back; I just liked to meet people before they knew they were missing."
+  },
+  {
+    Title: "Where the River Turns Back",
+    Category: "ADVENTURE",
+    Introduction: "A ferry pilot on a remote river finds a passenger who insists on traveling upstream to a village that was washed away long ago. By sunrise, the river has changed course.",
+    Opening: "The river turned north at midnight, against the slope of the land."
+  },
+  {
+    Title: "The Eighth Passenger",
+    Category: "MYSTERY",
+    Introduction: "Seven strangers board a sleeper train. At every stop, the conductor counts eight tickets—and one passenger remembers sharing a compartment with someone no one else can see.",
+    Opening: "There were seven of us in the carriage, but the conductor punched eight tickets."
+  },
+  {
+    Title: "The Trial of the Moon",
+    Category: "FANTASY",
+    Introduction: "When the moon is accused of pulling the tides away from a coastal city, a junior court clerk is assigned to defend it. The witnesses have been waiting centuries to speak.",
+    Opening: "The moon did not attend its own trial, so I was asked to speak for it."
+  },
+  {
+    Title: "The Unfinished Year",
+    Category: "LITERARY",
+    Introduction: "A grieving family receives a calendar with one extra month, each day containing a small memory they had shared with the person they lost. The dates are not all in the past.",
+    Opening: "The calendar had thirteen months, and the last one was in my mother's handwriting."
+  },
+  {
+    Title: "The Sound of Glass Birds",
+    Category: "FANTASY",
+    Introduction: "A glassblower can hear the final thought of every object she makes. One morning, a glass bird on her workbench whispers the name of someone who has not been born yet.",
+    Opening: "The first bird sang before I had finished making its wings."
+  },
+  {
+    Title: "The Recipe for a Disappearing City",
+    Category: "MAGICAL REALISM",
+    Introduction: "A community cookbook contains a recipe that makes one city block vanish for an afternoon. When a developer threatens the neighborhood, residents begin passing the book from kitchen to kitchen.",
+    Opening: "The first ingredient was a cup of rain collected before anyone called it a storm."
+  },
+  {
+    Title: "Notes from a Borrowed Body",
+    Category: "SCI-FI",
+    Introduction: "In a future where people can lend their bodies for a day, a cautious librarian wakes up with a stranger's handwritten notes in her pocket—and a promise she cannot remember making.",
+    Opening: "I woke up in my own bed with someone else's handwriting under my skin."
+  },
+  {
+    Title: "The Night Shift at the Museum",
+    Category: "MYSTERY",
+    Introduction: "A new night guard learns that the museum's exhibits rearrange themselves after closing. The changes seem harmless until a missing artifact appears in a room that has been locked for a hundred years.",
+    Opening: "On my third night shift, the portrait at the end of the gallery was facing the wall."
+  },
+  {
+    Title: "The Wish That Went Missing",
+    Category: "FANTASY",
+    Introduction: "A wishmaker keeps a ledger of every wish granted, refused, or forgotten. One entry has vanished, and the person who made it is beginning to remember a life that never happened.",
+    Opening: "There was a blank space in the ledger where someone's whole life should have been."
+  },
+  {
+    Title: "The Last Payphone",
+    Category: "CONTEMPORARY",
+    Introduction: "A retired telephone repairer keeps one payphone working in a town that no longer uses them. Each week, someone calls to leave a message for a person they can no longer reach.",
+    Opening: "The payphone rang at dawn, though its cord had been cut for years."
+  },
+  {
+    Title: "The Quietest Revolution",
+    Category: "SPECULATIVE",
+    Introduction: "In a city where every public sound is monitored, a choir learns to sing in frequencies just below hearing. Their silent rehearsals bring together people who have never dared to speak.",
+    Opening: "The revolution began with a note so low that only the floorboards heard it."
+  },
+  {
+    Title: "Stationary Stars",
+    Category: "SCI-FI",
+    Introduction: "A star tracker at a remote observatory notices that one constellation has not shifted in thousands of years. The pattern turns out to be a message—and it is addressed to the next person who looks up.",
+    Opening: "Every star moved except the seven that had spelled my name."
+  },
+  {
+    Title: "The Lighthouse's Keeper",
+    Category: "GOTHIC",
+    Introduction: "A newly hired lighthouse keeper finds logbooks written in her handwriting, dated decades before she was born. Each entry warns her about a ship that has not appeared yet.",
+    Opening: "The logbook was open to tomorrow, in my handwriting."
+  },
+  {
+    Title: "A Good Place for Monsters",
+    Category: "COMEDY",
+    Introduction: "A small town opens a very ordinary shelter for creatures displaced by human development. The first volunteer is a retired monster hunter who is not as retired as she claims.",
+    Opening: "The shelter's first rule was simple: no frightening the neighbors before breakfast."
+  }
+);
 
-randomBtn.addEventListener("click", function() {
-    // Clear any existing timer
-    if (timer) {
-        clearTimeout(timer);
-    }
+const startingThoughts = [
+  "The first thing I noticed was that the house had remembered my name.",
+  "By the time the train arrived, everyone on the platform had changed their story.",
+  "I found the note in a book I had already returned three times.",
+  "Nobody in town agreed on when the lighthouse went dark.",
+  "The key fit a door that was not there yesterday.",
+  "On Tuesday, the sky began keeping our secrets.",
+  "The stranger knew what I had ordered before I sat down.",
+  "We had one hour to decide which version of the truth to keep.",
+  "Every morning, someone left a small blue stone on my doorstep.",
+  "I had promised never to come back, but the mailbox was addressed to me.",
+  "The museum closed at six; the footsteps began at six-oh-one.",
+  "When the power returned, the old photograph had changed.",
+  "The last message was only three words long: Try the garden.",
+  "There was a second shadow beside mine, and it was waving.",
+  "For years, I thought the empty chair was waiting for someone else.",
+  "The town's newest rule was not to look up after sunset.",
+  "I bought the notebook because it was the only one that was already warm.",
+  "At the edge of the map, in careful handwriting, someone had written: Begin here.",
+  "The door opened onto a room full of rain, though the house was perfectly dry.",
+  "Nobody remembered the song, but everybody knew the next line.",
+  "The envelope arrived with no stamp, no address, and my handwriting on the front.",
+  "We met by accident every year on the same day, in a different city.",
+  "The new neighbor waved before our street had been built.",
+  "I was halfway through saying goodbye when the lights came on.",
+  "There were two cups on the table, though I lived alone.",
+  "The clock lost a minute each time someone told the truth.",
+  "My grandmother left me the house, the orchard, and one instruction: don't pick the silver apples.",
+  "The sea returned everything it had taken, except the names.",
+  "The first page was blank; the second described the room I was sitting in.",
+  "When the bell rang, every dog in the city answered with a human voice.",
+  "I recognized the handwriting before I remembered how to read it.",
+  "The night sky looked ordinary until one star blinked twice."
+];
 
-    // Reset the animation by removing the 'show' class
-    ideaBar.classList.remove("show");
+let currentIdeaKind = "story";
+let currentOpeningThought = "";
+let previousStoryIndex = -1;
+let previousThoughtIndex = -1;
+const ideaBar = document.getElementById("ideaBar");
 
-    // Select a random story prompt
-    const randomPick = Math.floor(Math.random() * storyPrompts.length);
-    ideaBar.children[0].innerHTML = "<i class='bi bi-lightbulb-fill'></i> " + storyPrompts[randomPick].Title;
-    ideaBar.children[1].innerHTML = storyPrompts[randomPick].Introduction;
+function chooseDifferentIndex(length, previousIndex) {
+  if (length <= 1) return 0;
+  let index = Math.floor(Math.random() * length);
+  while (index === previousIndex) index = Math.floor(Math.random() * length);
+  return index;
+}
 
-    // Use a timeout to allow for the 'show' class to be removed before adding it again
-    setTimeout(() => {
-        ideaBar.classList.add("show");
-    }, 50); // Small delay to ensure the animation resets
+function chooseStartingThought() {
+  previousThoughtIndex = chooseDifferentIndex(startingThoughts.length, previousThoughtIndex);
+  return startingThoughts[previousThoughtIndex];
+}
 
-    // Start a new timer
-    timer = setTimeout(() => {
-        ideaBar.classList.remove("show");
-    }, 10000);
-});
+function renderIdea(title, description, category, opening, kind = "story") {
+  currentIdeaKind = kind;
+  currentOpeningThought = opening || chooseStartingThought();
+  document.getElementById("ideaTitle").textContent = title;
+  document.getElementById("ideaDescription").textContent = description;
+  document.getElementById("ideaCategory").textContent = category || "STORY IDEA";
+  document.getElementById("ideaOpening").textContent = currentOpeningThought;
+  ideaBar.classList.add("show");
+  ideaBar.setAttribute("aria-hidden", "false");
+  ideaBar.inert = false;
+}
 
-ideaBar.addEventListener("click", function() {
-    // Hide the idea bar when clicked
-    ideaBar.classList.remove("show");
+function showRandomStoryIdea() {
+  previousStoryIndex = chooseDifferentIndex(storyPrompts.length, previousStoryIndex);
+  const idea = storyPrompts[previousStoryIndex];
+  renderIdea(
+    idea.Title || "A story idea",
+    idea.Introduction || "Start with a question and follow where it leads.",
+    idea.Category || "STORY IDEA",
+    idea.Opening || chooseStartingThought(),
+    "story"
+  );
+}
 
-    // Clear the timer if the idea bar is manually closed
-    if (timer) {
-        clearTimeout(timer);
-        timer = null; // Reset the timer variable
-    }
-});
+function showStartingThought() {
+  renderIdea(
+    "A sentence to begin with",
+    "Take this first line in any direction. Change a word, change the scene, or simply see what comes next.",
+    "FIRST LINE",
+    chooseStartingThought(),
+    "thought"
+  );
+}
+
+function hideIdeaCard() {
+  if (!ideaBar) return;
+  const restoreFocus = ideaBar.contains(document.activeElement);
+  ideaBar.classList.remove("show");
+  ideaBar.setAttribute("aria-hidden", "true");
+  ideaBar.inert = true;
+  if (restoreFocus) document.getElementById("randombtn").focus();
+}
+
+function addOpeningToDraft() {
+  if (!currentOpeningThought) return;
+  const paragraph = document.createElement("p");
+  paragraph.textContent = currentOpeningThought;
+  contentEditor.appendChild(paragraph);
+  const range = document.createRange();
+  range.selectNodeContents(paragraph);
+  range.collapse(false);
+  contentEditor.focus();
+  const selection = window.getSelection();
+  selection.removeAllRanges();
+  selection.addRange(range);
+  savedEditorRange = range.cloneRange();
+  contentEditor.dispatchEvent(new Event("input", { bubbles: true }));
+  editorScroll.scrollTop = editorScroll.scrollHeight;
+  hideIdeaCard();
+  displayMessage("Opening thought added to your draft.", "success");
+}
+
+document.getElementById("randombtn").addEventListener("click", showRandomStoryIdea);
+document.getElementById("quickThoughtBtn").addEventListener("click", showStartingThought);
+document.getElementById("nextIdea").addEventListener("click", () => currentIdeaKind === "thought" ? showStartingThought() : showRandomStoryIdea());
+document.getElementById("ideaClose").addEventListener("click", hideIdeaCard);
+document.getElementById("useIdea").addEventListener("click", addOpeningToDraft);
