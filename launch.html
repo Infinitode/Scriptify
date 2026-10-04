@@ -1,25 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#11110f">
-    <title>Scriptify Startup</title>
+    <meta name="theme-color" content="#101211">
+    <title>Scriptify · Set up speech</title>
     <link rel="shortcut icon" href="web/favicon.ico" type="image/x-icon">
     <link rel="apple-touch-icon" href="web/apple-touch-icon.png">
     <link rel="stylesheet" href="web/vendor/bootstrap-icons/bootstrap-icons.min.css">
     <link rel="stylesheet" href="web/fonts/fonts.css">
     <link rel="stylesheet" href="style.css">
 </head>
-
-<body>
+<body class="launch-page">
     <div class="launch-shell">
         <header class="launch-bar pywebview-drag-region">
-            <div class="brand" aria-label="Scriptify startup">
-                <span class="brand-mark"><i class="bi bi-pencil-fill" aria-hidden="true"></i></span>
-                <span class="brand-copy"><strong>scriptify</strong><small>MODEL SETUP</small></span>
-            </div>
+            <a class="launch-brand" href="#" aria-label="Scriptify home">
+                <span class="launch-brand-mark" aria-hidden="true"><i class="bi bi-pencil-fill"></i></span>
+                <span class="launch-brand-name">scriptify</span>
+            </a>
+            <div class="launch-bar-label">VOICE SETUP</div>
             <div class="window-controls" aria-label="Window controls">
                 <button id="min" type="button" title="Minimize" aria-label="Minimize window"><i class="bi bi-dash" aria-hidden="true"></i></button>
                 <button id="max" type="button" title="Toggle fullscreen" aria-label="Toggle fullscreen"><i class="bi bi-fullscreen" aria-hidden="true"></i></button>
@@ -29,83 +28,58 @@
 
         <main class="launch-main">
             <section class="launch-intro">
-                <span class="launch-eyebrow">WELCOME</span>
-                <h1>Choose a transcription model</h1>
-                <p>Scriptify downloads your model once and reuses it on every launch. Bigger models understand more,
-                    but they need more memory and take longer to download.</p>
+                <div class="launch-overline"><span class="status-dot" aria-hidden="true"></span> PRIVATE, ON-DEVICE TRANSCRIPTION</div>
+                <h1>Choose your speech model</h1>
+                <p>Pick the right balance of speed and accuracy. Your quantized ONNX model downloads once, then runs locally every time you dictate.</p>
             </section>
 
-            <div class="model-grid" id="modelGrid" role="radiogroup" aria-label="Whisper model">
-                <button class="model-card" type="button" role="radio" aria-checked="false" data-model="tiny.en"
-                    data-vram="~1 GB VRAM" data-speed="~10x realtime" data-size="~75 MB download">
-                    <span class="model-card-top"><span class="model-index">1</span><strong>Tiny</strong></span>
-                    <span class="model-meta">
-                        <span><i class="bi bi-memory" aria-hidden="true"></i> ~1 GB</span>
-                        <span><i class="bi bi-speedometer2" aria-hidden="true"></i> ~10x</span>
-                    </span>
-                    <span class="model-size">~75 MB download</span>
+            <div class="model-grid" id="modelGrid" role="radiogroup" aria-label="Whisper speech model">
+                <button class="model-card" type="button" role="radio" aria-checked="false" data-model="tiny.en" data-language="English only" data-size="~45 MB" data-description="The quickest option for short notes and clear speech." data-badge="FASTEST">
+                    <span class="model-card-title-row"><span class="model-card-title"><span class="model-index">01</span><strong>Tiny</strong></span><span class="model-tag">FASTEST</span></span>
+                    <span class="model-card-description">Quick capture · lowest footprint</span>
+                    <span class="model-card-footer"><span>English only</span><span>~45 MB</span></span>
                 </button>
-                <button class="model-card" type="button" role="radio" aria-checked="false" data-model="base.en"
-                    data-vram="~1 GB VRAM" data-speed="~7x realtime" data-size="~142 MB download">
-                    <span class="model-card-top"><span class="model-index">2</span><strong>Base</strong></span>
-                    <span class="model-meta">
-                        <span><i class="bi bi-memory" aria-hidden="true"></i> ~1 GB</span>
-                        <span><i class="bi bi-speedometer2" aria-hidden="true"></i> ~7x</span>
-                    </span>
-                    <span class="model-size">~142 MB download</span>
+                <button class="model-card" type="button" role="radio" aria-checked="false" data-model="base.en" data-language="English only" data-size="~80 MB" data-description="A compact option for everyday dictation." data-badge="LIGHTWEIGHT">
+                    <span class="model-card-title-row"><span class="model-card-title"><span class="model-index">02</span><strong>Base</strong></span><span class="model-tag">LIGHTWEIGHT</span></span>
+                    <span class="model-card-description">Everyday notes · small download</span>
+                    <span class="model-card-footer"><span>English only</span><span>~80 MB</span></span>
                 </button>
-                <button class="model-card" type="button" role="radio" aria-checked="false" data-model="small.en"
-                    data-vram="~2 GB VRAM" data-speed="~4x realtime" data-size="~470 MB download">
-                    <span class="model-card-top"><span class="model-index">3</span><strong>Small</strong></span>
-                    <span class="model-meta">
-                        <span><i class="bi bi-memory" aria-hidden="true"></i> ~2 GB</span>
-                        <span><i class="bi bi-speedometer2" aria-hidden="true"></i> ~4x</span>
-                    </span>
-                    <span class="model-size">~470 MB download</span>
+                <button class="model-card" type="button" role="radio" aria-checked="false" data-model="small.en" data-language="English only" data-size="~250 MB" data-description="A strong everyday balance of recognition quality and speed." data-badge="RECOMMENDED">
+                    <span class="model-card-title-row"><span class="model-card-title"><span class="model-index">03</span><strong>Small</strong></span><span class="model-tag model-tag-accent">RECOMMENDED</span></span>
+                    <span class="model-card-description">Balanced accuracy · responsive</span>
+                    <span class="model-card-footer"><span>English only</span><span>~250 MB</span></span>
                 </button>
-                <button class="model-card" type="button" role="radio" aria-checked="false" data-model="medium.en"
-                    data-vram="~5 GB VRAM" data-speed="~2x realtime" data-size="~1.5 GB download">
-                    <span class="model-card-top"><span class="model-index">4</span><strong>Medium</strong></span>
-                    <span class="model-meta">
-                        <span><i class="bi bi-memory" aria-hidden="true"></i> ~5 GB</span>
-                        <span><i class="bi bi-speedometer2" aria-hidden="true"></i> ~2x</span>
-                    </span>
-                    <span class="model-size">~1.5 GB download</span>
+                <button class="model-card" type="button" role="radio" aria-checked="false" data-model="medium.en" data-language="English only" data-size="~850 MB" data-description="More accurate on varied speech, with a larger download." data-badge="HIGH ACCURACY">
+                    <span class="model-card-title-row"><span class="model-card-title"><span class="model-index">04</span><strong>Medium</strong></span><span class="model-tag">HIGH ACCURACY</span></span>
+                    <span class="model-card-description">More detail · larger download</span>
+                    <span class="model-card-footer"><span>English only</span><span>~850 MB</span></span>
                 </button>
-                <button class="model-card" type="button" role="radio" aria-checked="false" data-model="large"
-                    data-vram="~10 GB VRAM" data-speed="~1x realtime" data-size="~2.9 GB download">
-                    <span class="model-card-top"><span class="model-index">5</span><strong>Large</strong></span>
-                    <span class="model-meta">
-                        <span><i class="bi bi-memory" aria-hidden="true"></i> ~10 GB</span>
-                        <span><i class="bi bi-speedometer2" aria-hidden="true"></i> ~1x</span>
-                    </span>
-                    <span class="model-size">~2.9 GB download</span>
+                <button class="model-card" type="button" role="radio" aria-checked="false" data-model="large" data-language="Multilingual" data-size="~2 GB" data-description="The highest-accuracy option, with support for many languages." data-badge="MAX ACCURACY">
+                    <span class="model-card-title-row"><span class="model-card-title"><span class="model-index">05</span><strong>Large</strong></span><span class="model-tag">MAX ACCURACY</span></span>
+                    <span class="model-card-description">Multilingual · best detail</span>
+                    <span class="model-card-footer"><span>Multilingual</span><span>~2 GB</span></span>
                 </button>
-                <button class="model-card" type="button" role="radio" aria-checked="false" data-model="turbo"
-                    data-vram="~6 GB VRAM" data-speed="~8x realtime" data-size="~1.6 GB download">
-                    <span class="model-card-top"><span class="model-index">6</span><strong>Turbo</strong></span>
-                    <span class="model-meta">
-                        <span><i class="bi bi-memory" aria-hidden="true"></i> ~6 GB</span>
-                        <span><i class="bi bi-speedometer2" aria-hidden="true"></i> ~8x</span>
-                    </span>
-                    <span class="model-size">~1.6 GB download</span>
+                <button class="model-card" type="button" role="radio" aria-checked="false" data-model="turbo" data-language="Multilingual" data-size="~1 GB" data-description="Fast multilingual transcription with strong recognition quality." data-badge="FAST MULTILINGUAL">
+                    <span class="model-card-title-row"><span class="model-card-title"><span class="model-index">06</span><strong>Turbo</strong></span><span class="model-tag">FAST MULTILINGUAL</span></span>
+                    <span class="model-card-description">Speed and accuracy · many languages</span>
+                    <span class="model-card-footer"><span>Multilingual</span><span>~1 GB</span></span>
                 </button>
             </div>
 
-            <div class="launch-detail" id="launchDetail" aria-live="polite">
-                <span><i class="bi bi-info-circle" aria-hidden="true"></i> Pick a model to see what it needs.</span>
+            <div class="launch-detail" id="launchDetail" aria-live="polite" role="status">
+                <i class="bi bi-info-circle" aria-hidden="true"></i>
+                <span>Select a model to see its details.</span>
             </div>
 
             <footer class="launch-footer">
-                <p class="launch-note">Models are stored in the <span class="key">/models</span> folder next to
-                    Scriptify. Delete one later to free up space, or pick a different model on your next launch.</p>
-                <button class="launch-start disabled" id="startButton" type="button">
-                    <i class="bi bi-download" aria-hidden="true"></i> Download and start
+                <p class="launch-note"><span class="launch-note-icon"><i class="bi bi-shield-lock" aria-hidden="true"></i></span><span>Model files are stored in <code>models/</code> beside Scriptify. Download sizes are approximate; model weights are separate from the app.</span></p>
+                <button class="launch-start disabled" id="startButton" type="button" disabled>
+                    <i class="bi bi-arrow-down-circle" aria-hidden="true"></i><span>Download model</span><i class="bi bi-arrow-right launch-button-arrow" aria-hidden="true"></i>
                 </button>
             </footer>
         </main>
 
-        <div class="launch-progress" id="launchProgress" aria-hidden="true">
+        <div class="launch-progress" id="launchProgress" role="progressbar" aria-label="Model setup progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-hidden="true">
             <span id="launchProgressBar"></span>
         </div>
     </div>
@@ -120,19 +94,41 @@
         let selectedModel = "";
         let selectedLabel = "";
 
-        function setStatus(message, tone) {
-            detail.innerHTML = "";
+        function setStatus(message, tone = "info") {
+            detail.replaceChildren();
             const icon = document.createElement("i");
-            icon.className = tone === "error" ? "bi bi-exclamation-circle" : tone === "done" ? "bi bi-check2" : "bi bi-info-circle";
+            icon.className = tone === "error"
+                ? "bi bi-exclamation-circle"
+                : tone === "done" ? "bi bi-check2-circle" : "bi bi-info-circle";
             icon.setAttribute("aria-hidden", "true");
             const text = document.createElement("span");
             text.textContent = message;
             detail.append(icon, text);
             detail.classList.toggle("is-error", tone === "error");
             detail.classList.toggle("is-done", tone === "done");
+
+            if (tone === "error") {
+                modelGrid.classList.remove("disabled");
+                startButton.classList.remove("disabled");
+                startButton.disabled = !selectedModel;
+                progress.classList.remove("indeterminate");
+                progress.setAttribute("aria-hidden", "true");
+                progress.setAttribute("aria-valuenow", "0");
+                progressBar.style.width = "0%";
+            }
+            if (tone === "done") {
+                progress.classList.remove("indeterminate");
+                progress.setAttribute("aria-valuenow", "100");
+                progressBar.style.width = "100%";
+            }
+        }
+
+        function setLoadingStatus(message, tone = "info") {
+            setStatus(message, tone);
         }
 
         function selectCard(card) {
+            if (modelGrid.classList.contains("disabled")) return;
             modelCards.forEach((other) => {
                 const isSelected = other === card;
                 other.classList.toggle("selected", isSelected);
@@ -140,56 +136,71 @@
             });
             selectedModel = card.dataset.model;
             selectedLabel = card.querySelector("strong").textContent;
+            startButton.disabled = false;
             startButton.classList.remove("disabled");
-            setStatus(`${selectedLabel} needs ${card.dataset.vram}, runs at about ${card.dataset.speed} and is a ${card.dataset.size}.`);
+            setStatus(`${card.dataset.description} ${card.dataset.language} · ${card.dataset.size} download · quantized ONNX.`);
         }
 
         modelCards.forEach((card) => {
             card.addEventListener("click", () => selectCard(card));
+            card.addEventListener("keydown", (event) => {
+                const direction = event.key === "ArrowRight" || event.key === "ArrowDown" ? 1
+                    : event.key === "ArrowLeft" || event.key === "ArrowUp" ? -1 : 0;
+                if (!direction) return;
+                event.preventDefault();
+                const index = modelCards.indexOf(card);
+                const next = modelCards[(index + direction + modelCards.length) % modelCards.length];
+                next.focus();
+                selectCard(next);
+            });
         });
 
         startButton.addEventListener("click", () => {
-            if (!selectedModel || startButton.classList.contains("disabled")) return;
+            if (!selectedModel || startButton.disabled) return;
             modelGrid.classList.add("disabled");
             startButton.classList.add("disabled");
-            progress.classList.remove("indeterminate");
+            startButton.disabled = true;
+            progress.classList.add("indeterminate");
             progress.setAttribute("aria-hidden", "false");
-            progressBar.style.width = "0%";
-            setStatus(`Downloading ${selectedLabel}. This can take a while on a slow connection.`);
-            if (window.pywebview && window.pywebview.api) pywebview.api.download_model(selectedModel);
-            else progress.classList.add("indeterminate");
+            progress.removeAttribute("aria-valuenow");
+            progressBar.style.width = "35%";
+            setStatus(`Preparing ${selectedLabel}. Download progress is shown as indeterminate while the model files are fetched.`);
+            if (window.pywebview && window.pywebview.api) {
+                window.pywebview.api.download_model(selectedModel);
+            } else {
+                setStatus("The desktop bridge is unavailable. Close and reopen Scriptify to try again.", "error");
+            }
         });
 
-        // main.py calls this while the model downloads. Accepts either 0-1 or 0-100.
+        // Retained for API/backward compatibility. Model byte progress is not
+        // available from the downloader, so this only reports explicit values.
         function updateProgressBar(value) {
             const numeric = Number(value);
-            if (!isFinite(numeric)) return;
+            if (!Number.isFinite(numeric)) return;
             const percent = Math.max(0, Math.min(100, numeric <= 1 ? numeric * 100 : numeric));
             progress.classList.remove("indeterminate");
+            progress.classList.add("is-visible");
             progress.setAttribute("aria-hidden", "false");
+            progress.setAttribute("aria-valuenow", String(Math.round(percent)));
             progressBar.style.width = `${percent}%`;
-            if (percent < 100) setStatus(`Downloading ${selectedLabel || "model"} — ${Math.round(percent)}%`);
-            else setStatus(`${selectedLabel || "Model"} ready. Opening the writing studio.`, "done");
         }
 
-        // main.py's display_text() helper.
-        function displayText(text) {
-            if (text) setStatus(text);
+        function displayText(message) {
+            if (message) setStatus(message);
         }
 
         function closeWindow() {
-            if (window.pywebview && window.pywebview.api) pywebview.api.closeWindow();
+            if (window.pywebview && window.pywebview.api) window.pywebview.api.closeWindow();
         }
         function minimizeWindow() {
-            if (window.pywebview && window.pywebview.api) pywebview.api.minimizeWindow();
+            if (window.pywebview && window.pywebview.api) window.pywebview.api.minimizeWindow();
         }
         function toggleFullscreen() {
-            if (window.pywebview && window.pywebview.api) pywebview.api.toggleFullscreen();
+            if (window.pywebview && window.pywebview.api) window.pywebview.api.toggleFullscreen();
         }
         document.getElementById("close").addEventListener("click", closeWindow);
         document.getElementById("min").addEventListener("click", minimizeWindow);
         document.getElementById("max").addEventListener("click", toggleFullscreen);
     </script>
 </body>
-
 </html>

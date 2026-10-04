@@ -43,6 +43,23 @@ async function toggleTranscription() {
   }
 }
 
+function handleTranscriptionFailure(message) {
+  transcribing = false;
+  const button = document.getElementById("transcribe");
+  const timer = document.getElementById("timer");
+  if (button) {
+    button.classList.remove("is-listening");
+    button.disabled = false;
+    button.setAttribute("aria-label", "Start voice transcription");
+    button.title = "Start voice transcription";
+  }
+  if (timer) {
+    timer.classList.remove("is-listening");
+    timer.textContent = "Ready to dictate";
+  }
+  displayMessage(message || "Voice transcription stopped unexpectedly.", "error");
+}
+
 document.getElementById("transcribe").addEventListener("click", toggleTranscription);
 
 function updateTimer(remainingTime) {
