@@ -1,7 +1,11 @@
 const STORY_LIBRARY_KEY = "scriptify.story-library.v1";
 const ACTIVE_STORY_KEY = "scriptify.active-story.v1";
 const LEGACY_DRAFT_KEY = "scriptify.local-draft.v1";
+const PENDING_STORY_KEY = "scriptify.pending-story-save.v1";
 const RECENT_STORY_LIMIT = 5;
+const STORY_SAVE_DELAY = 900;
+const STORY_SAVE_MAX_WAIT = 5_000;
+const STORY_SAVE_RETRY_MAX_DELAY = 30_000;
 
 let storyRecords = [];
 let activeStoryId = null;
@@ -15,6 +19,8 @@ let storyEditVersion = 0;
 let isStoryLibraryOpen = false;
 let editorLockDepth = 0;
 let storySaveTimer = null;
+let storySaveMaxTimer = null;
+let storySaveRetryCount = 0;
 let renameTargetId = null;
 let renameReturnFocus = null;
 
@@ -113,6 +119,63 @@ function persistBrowserStories() {
     console.error("Could not save the local story library:", error);
     markSaveState("error");
     return false;
+  }
+}
+
+// Native saves go through the asynchronous pywebview bridge. Keep one small,
+// synchronous recovery copy so edits made just before an unexpected window
+// close can be replayed when Scriptify starts again.
+function writePendingStoryRecovery(story) {
+  if (!story || !story.id) return false;
+  try {
+    localStorage.setItem(PENDING_STORY_KEY, JSON.stringify(normalizeStory(story)));
+    return true;
+  } catch (error) {
+    console.warn("Could not write the pending story recovery copy:", error);
+    return false;
+  }
+}
+
+function readPendingStoryRecovery() {
+  try {
+    const raw = localStorage.getItem(PENDING_STORY_KEY);
+    if (!raw) return null;
+    const story = JSON.parse(raw);
+    if (!story || typeof story !== "object"
+      || typeof story.id !== "string" || !story.id
+      || typeof story.title !== "string"
+      || typeof story.content !== "string"
+      || typeof story.updatedAt !== "string"
+      || !Number.isFinite(new Date(story.updatedAt).getTime())) {
+      discardPendingStoryRecovery();
+      return null;
+    }
+    return normalizeStory(story);
+  } catch (error) {
+    console.warn("Could not read the pending story recovery copy:", error);
+    discardPendingStoryRecovery();
+    return null;
+  }
+}
+
+function clearPendingStoryRecovery(savedStory) {
+  try {
+    const pending = readPendingStoryRecovery();
+    if (!pending || !savedStory || pending.id !== savedStory.id) return;
+    // A newer edit may have arrived while the previous save was in flight.
+    // Never clear its recovery copy when an older version finishes saving.
+    if (pending.title !== savedStory.title || pending.content !== savedStory.content || pending.name !== savedStory.name) return;
+    localStorage.removeItem(PENDING_STORY_KEY);
+  } catch (error) {
+    console.warn("Could not clear the pending story recovery copy:", error);
+  }
+}
+
+function discardPendingStoryRecovery() {
+  try {
+    localStorage.removeItem(PENDING_STORY_KEY);
+  } catch (error) {
+    console.warn("Could not discard the pending story recovery copy:", error);
   }
 }
 
@@ -366,6 +429,7 @@ function updateActiveRecordFromEditor() {
 async function persistStory(story) {
   if (nativeStoryStorage) {
     const api = getNativeApi();
+    if (!api || typeof api.save_story !== "function") throw new Error("The desktop story store is unavailable.");
     const response = await Promise.resolve(api.save_story(story.id, story.name, story.title, story.content, story.createdAt));
     if (!response || response.ok === false) throw new Error(response && response.error || "The story could not be saved.");
   } else if (!persistBrowserStories()) {
@@ -374,20 +438,46 @@ async function persistStory(story) {
   return story;
 }
 
+function clearStorySaveTimers() {
+  if (storySaveTimer) clearTimeout(storySaveTimer);
+  if (storySaveMaxTimer) clearTimeout(storySaveMaxTimer);
+  storySaveTimer = null;
+  storySaveMaxTimer = null;
+}
+
+function scheduleStoryRetry(delay = null) {
+  if (!activeStoryDirty || !activeStoryId) return;
+  clearStorySaveTimers();
+  const retryDelay = delay === null
+    ? Math.min(STORY_SAVE_RETRY_MAX_DELAY, 1000 * (2 ** Math.max(0, storySaveRetryCount - 1)))
+    : delay;
+  storySaveTimer = setTimeout(() => {
+    storySaveTimer = null;
+    saveActiveStory();
+  }, retryDelay);
+}
+
 let activeSavePromise = null;
 async function saveActiveStory(force = false) {
   if (!storyLibraryInitialized || !activeStoryId || isLoadingStory) return false;
   if (!activeStoryDirty && !force) return true;
   if (activeSavePromise) {
     const previousResult = await activeSavePromise;
+    // Coalesce edits made during a successful write, but do not recursively
+    // hammer the store when a write failed; the bounded retry timer handles it.
+    if (!previousResult) return false;
     if (activeStoryDirty && activeStoryId) return saveActiveStory(force);
-    return previousResult;
+    return true;
   }
 
-  const story = updateActiveRecordFromEditor();
-  if (!story) return false;
+  const currentRecord = updateActiveRecordFromEditor();
+  if (!currentRecord) return false;
+  // Freeze the exact version being sent to the native API. The in-memory
+  // record can continue changing while that asynchronous call is in flight.
+  const story = { ...currentRecord };
   const versionAtStart = storyEditVersion;
   const storyIdAtStart = activeStoryId;
+  clearStorySaveTimers();
   storeActiveStoryId(activeStoryId);
   sortStories();
   renderRecentStories();
@@ -395,17 +485,27 @@ async function saveActiveStory(force = false) {
   let savePromise;
   savePromise = (async () => {
     try {
+      if (activeStoryDirty) writePendingStoryRecovery(story);
       await persistStory(story);
       sortStories();
       renderRecentStories();
       if (activeStoryId === storyIdAtStart) {
         activeStoryDirty = storyEditVersion !== versionAtStart;
-        if (!activeStoryDirty) markSaveState("saved", "All changes saved");
+        if (!activeStoryDirty) {
+          storySaveRetryCount = 0;
+          clearPendingStoryRecovery(story);
+          markSaveState("saved", "All changes saved");
+        }
       }
       return true;
     } catch (error) {
       console.error("Automatic story save failed:", error);
-      markSaveState("error", "Story could not be saved.");
+      if (activeStoryId === storyIdAtStart) {
+        activeStoryDirty = true;
+        storySaveRetryCount += 1;
+        markSaveState("error", "Story could not be saved — retrying…");
+        scheduleStoryRetry();
+      }
       return false;
     } finally {
       if (activeSavePromise === savePromise) activeSavePromise = null;
@@ -421,25 +521,39 @@ function scheduleStorySave() {
   if (!story) return;
   storyEditVersion += 1;
   activeStoryDirty = true;
+  storySaveRetryCount = 0;
   sortStories();
   renderRecentStories();
   markSaveState("saving", "Saving story…");
+
+  // Save shortly after a pause, but also set a maximum wait so steady typing
+  // cannot keep pushing the autosave deadline out forever.
   if (storySaveTimer) clearTimeout(storySaveTimer);
   storySaveTimer = setTimeout(() => {
     storySaveTimer = null;
+    if (storySaveMaxTimer) clearTimeout(storySaveMaxTimer);
+    storySaveMaxTimer = null;
     saveActiveStory();
-  }, 900);
+  }, STORY_SAVE_DELAY);
+  if (!storySaveMaxTimer) {
+    storySaveMaxTimer = setTimeout(() => {
+      storySaveMaxTimer = null;
+      if (storySaveTimer) clearTimeout(storySaveTimer);
+      storySaveTimer = null;
+      saveActiveStory();
+    }, STORY_SAVE_MAX_WAIT);
+  }
 }
 
 document.addEventListener("scriptify:document-change", scheduleStorySave);
 
 async function flushStorySave() {
-  const pending = Boolean(storySaveTimer);
-  if (storySaveTimer) {
-    clearTimeout(storySaveTimer);
-    storySaveTimer = null;
+  clearStorySaveTimers();
+  if (activeSavePromise) {
+    const saveResult = await activeSavePromise;
+    if (!saveResult) return false;
   }
-  if (!pending && !activeStoryDirty) return true;
+  if (!activeStoryDirty) return true;
   return saveActiveStory(true);
 }
 
@@ -460,9 +574,8 @@ async function activateStory(storyOrId, options = {}) {
       displayMessage("Your current story could not be saved, so it was not switched.", "error");
       return false;
     }
-  } else if (storySaveTimer) {
-    clearTimeout(storySaveTimer);
-    storySaveTimer = null;
+  } else {
+    clearStorySaveTimers();
   }
 
   let story = typeof storyOrId === "object" ? normalizeStory(storyOrId) : await getFullStory(id);
@@ -855,6 +968,8 @@ async function initializeStoryLibrary() {
   const appShell = document.querySelector(".app-shell");
   if (appShell) appShell.inert = true;
 
+  let recoveryStory = null;
+  let recoveryNeedsSaving = false;
   try {
     let records = [];
     const api = getNativeApi();
@@ -875,16 +990,42 @@ async function initializeStoryLibrary() {
       records = readBrowserStories();
     }
 
+    const pendingRecovery = readPendingStoryRecovery();
+    if (pendingRecovery) {
+      const existing = records.find((story) => story.id === pendingRecovery.id);
+      const pendingTime = new Date(pendingRecovery.updatedAt).getTime();
+      const storedTime = existing ? new Date(existing.updatedAt).getTime() : 0;
+      if (!existing || !Number.isFinite(storedTime) || pendingTime >= storedTime) {
+        recoveryStory = pendingRecovery;
+        records = records.filter((story) => story.id !== pendingRecovery.id);
+        records.push(recoveryStory);
+      } else {
+        // A completed native save can be newer than its leftover recovery
+        // journal (for example, if the app closed between write and cleanup).
+        discardPendingStoryRecovery();
+      }
+    }
+
     storyRecords = records;
     if (!storyRecords.length) {
       const legacy = readLegacyDraft();
       if (legacy) {
         storyRecords.push(legacy);
+        recoveryStory = legacy;
+      }
+    }
+
+    if (recoveryStory) {
+      try {
         if (nativeStoryStorage) {
-          try { await persistStory(legacy); } catch (error) { console.error("Could not migrate the previous draft:", error); }
-        } else {
-          persistBrowserStories();
+          await persistStory(recoveryStory);
+        } else if (!persistBrowserStories()) {
+          throw new Error("The recovered story could not be saved in browser storage.");
         }
+        clearPendingStoryRecovery(recoveryStory);
+      } catch (error) {
+        recoveryNeedsSaving = true;
+        console.error("Could not finish saving the recovered story:", error);
       }
     }
 
@@ -893,17 +1034,57 @@ async function initializeStoryLibrary() {
     const storedActiveId = (() => {
       try { return localStorage.getItem(ACTIVE_STORY_KEY); } catch (error) { return null; }
     })();
-    const selected = storyRecords.find((story) => story.id === storedActiveId) || storyRecords[0];
-    const loaded = selected ? await activateStory(selected.id, { skipSave: true, closeLibrary: false }) : false;
+    const selected = (recoveryNeedsSaving && recoveryStory)
+      || (storyRecords.find((story) => story.id === storedActiveId) || storyRecords[0]);
+    const storyToActivate = recoveryStory && selected && selected.id === recoveryStory.id ? recoveryStory : selected;
+    const loadFromNativeStore = nativeStoryStorage && storyToActivate && (!recoveryStory || storyToActivate.id !== recoveryStory.id);
+    const loaded = storyToActivate
+      ? await activateStory(loadFromNativeStore ? storyToActivate.id : storyToActivate, { skipSave: true, closeLibrary: false })
+      : false;
     if (!loaded) await createNewStory({ saveCurrent: false, closeLibrary: false, focus: false });
+
+    if (loaded && recoveryNeedsSaving && recoveryStory && activeStoryId === recoveryStory.id) {
+      activeStoryDirty = true;
+      storyEditVersion += 1;
+      storySaveRetryCount = 1;
+      markSaveState("error", "Recovered changes — retrying save");
+      scheduleStoryRetry(1000);
+      displayMessage("A recent edit was recovered. Scriptify will retry saving it.", "info");
+    }
     renderRecentStories();
   } catch (error) {
     console.error("Story library initialization failed:", error);
     storyLibraryInitialized = true;
     nativeStoryStorage = false;
     storyRecords = readBrowserStories();
+
+    const pendingRecovery = readPendingStoryRecovery();
+    if (pendingRecovery) {
+      const existing = storyRecords.find((story) => story.id === pendingRecovery.id);
+      if (!existing || new Date(pendingRecovery.updatedAt) >= new Date(existing.updatedAt)) {
+        storyRecords = storyRecords.filter((story) => story.id !== pendingRecovery.id);
+        storyRecords.push(pendingRecovery);
+        recoveryStory = pendingRecovery;
+        recoveryNeedsSaving = true;
+        persistBrowserStories();
+      }
+    }
+
     if (!storyRecords.length) await createNewStory({ saveCurrent: false, closeLibrary: false, focus: false });
-    else await activateStory(storyRecords[0].id, { skipSave: true, closeLibrary: false });
+    else {
+      sortStories();
+      const selected = recoveryNeedsSaving && recoveryStory
+        ? recoveryStory
+        : storyRecords.find((story) => story.id === (() => { try { return localStorage.getItem(ACTIVE_STORY_KEY); } catch (error) { return null; } })()) || storyRecords[0];
+      await activateStory(selected, { skipSave: true, closeLibrary: false });
+      if (recoveryNeedsSaving && recoveryStory && activeStoryId === recoveryStory.id) {
+        activeStoryDirty = true;
+        storyEditVersion += 1;
+        storySaveRetryCount = 1;
+        markSaveState("error", "Recovered changes — retrying save");
+        scheduleStoryRetry(1000);
+      }
+    }
     displayMessage("The story library opened in local browser storage.", "error");
   } finally {
     storyLibraryInitializing = false;
