@@ -35,7 +35,7 @@ jobs:
         shell: bash
         run: |
           python -m pip install --upgrade pip
-          pip install pyinstaller openai-whisper==20250625 sounddevice scipy python-docx fpdf beautifulsoup4 pywebview
+          pip install pyinstaller -r requirements.txt
 
       # ---------------------------------------------------------
       # macOS
@@ -46,14 +46,11 @@ jobs:
         shell: bash
         run: |
           pip install pillow
-
           pyinstaller \
             --onefile \
             --name Scriptify \
             --icon web/favicon.ico \
-            --add-data "ffmpeg/ffmpeg_mac.zip:ffmpeg" \
-            --hidden-import="whisper" \
-            --add-data "whisper:whisper" \
+            --collect-all onnx_asr \
             --add-data "web:web" \
             --add-data "js:js" \
             --add-data "index.html:." \
@@ -61,8 +58,7 @@ jobs:
             --add-data "style.css:." \
             --osx-bundle-identifier com.infinitode.scriptify \
             --windowed \
-            main.py \
-            --version-file version_info.txt
+            main.py
 
       # ---------------------------------------------------------
       # Linux
@@ -81,9 +77,7 @@ jobs:
             --strip \
             --name Scriptify \
             --icon web/favicon.ico \
-            --add-data "ffmpeg/ffmpeg_ubuntu.zip:ffmpeg" \
-            --hidden-import="whisper" \
-            --add-data "whisper:whisper" \
+            --collect-all onnx_asr \
             --exclude-module tkinter \
             --exclude-module PyQt5 \
             --add-data "web:web" \
@@ -93,7 +87,6 @@ jobs:
             --add-data "style.css:." \
             --windowed \
             main.py \
-            --version-file version_info.txt \
             --upx-dir /usr/bin
 
           strip dist/Scriptify
@@ -110,9 +103,7 @@ jobs:
             --onefile `
             --name Scriptify `
             --icon web/favicon.ico `
-            --add-data "ffmpeg/ffmpeg_windows.zip;ffmpeg" `
-            --hidden-import="whisper" `
-            --add-data "whisper;whisper" `
+            --collect-all onnx_asr `
             --add-data "web;web" `
             --add-data "js;js" `
             --add-data "index.html;." `

@@ -1,131 +1,49 @@
-import random
-import string
-import webview
+import html as html_lib
+import json
 import os
-import time
-import sys
-import subprocess
-import shutil
-import tempfile
-import threading
-import whisper  # Whisper for speech-to-text processing
 import queue
-import json  # Import json for safe string handling
+import sys
+import threading
+import time
 import uuid
-import sounddevice as sd  # For audio recording
+from datetime import datetime
+
 import numpy as np
-from scipy.io.wavfile import write  # To handle audio format conversion
+import webview
+from bs4 import BeautifulSoup, NavigableString, Tag
 from docx import Document
 from docx.shared import Pt
 from fpdf import FPDF
-from datetime import datetime
-from bs4 import BeautifulSoup, NavigableString, Tag
-import html as html_lib
-from whisper.utils import get_writer
 
-# Transcription queue for thread communication
-transcription_queue = queue.Queue()
-is_transcribing = False
-transcribed_text = ""  # Global variable to hold the transcribed text
+from speech_engine import MODEL_CATALOG, load_model as load_whisper_model, transcribe as transcribe_audio
 
-model = None
-
-# Adjust base path for bundled applications
-if getattr(sys, 'frozen', False):
-    base_path = sys._MEIPASS
-else:
-    base_path = os.path.abspath(".")
-
-# Determine the directory of the script or the executable
-if getattr(sys, 'frozen', False):
+# Determine the directory for model files and safety backups.
+if getattr(sys, "frozen", False):
     app_dir = os.path.dirname(sys.executable)
 else:
     app_dir = os.path.dirname(os.path.abspath(__file__))
 
-# Set whisper download folder
-os.environ["WHISPER_DOWNLOAD_DIR"] = os.path.join(app_dir, "models")
-os.environ["WHISPER_CACHE_DIR"] = os.path.join(app_dir, "models")
+models_directory = os.path.join(app_dir, "models")
+os.makedirs(models_directory, exist_ok=True)
+# Keep Hugging Face's small metadata cache beside the downloaded model files.
+os.environ.setdefault("HF_HOME", os.path.join(models_directory, ".hf-cache"))
+os.environ.setdefault("HF_HUB_DISABLE_TELEMETRY", "1")
 
-def extract_ffmpeg():
-    """Extracts the correct FFmpeg binary for the OS and returns its path."""
-    temp_dir = tempfile.mkdtemp()
-
-    # Determine OS and archive filename
-    if sys.platform.startswith("win"):
-        archive_name = "ffmpeg_windows.zip"
-        extracted_binary = "ffmpeg.exe"
-    elif sys.platform.startswith("darwin"):
-        archive_name = "ffmpeg_mac.zip"
-        extracted_binary = "ffmpeg"
-    elif sys.platform.startswith("linux"):
-        archive_name = "ffmpeg_ubuntu.zip"
-        extracted_binary = "ffmpeg"
-    else:
-        raise RuntimeError("Unsupported OS")
-
-    # Paths
-    archive_path = os.path.join(base_path, "ffmpeg", archive_name)
-
-    # Extract using shutil
-    try:
-        print(f"Extracting {archive_name} to {temp_dir}...")
-        shutil.unpack_archive(archive_path, temp_dir)
-
-        # Debug: List extracted files
-        extracted_files = os.listdir(temp_dir)
-        print("Extracted files:", extracted_files)
-
-        # Find FFmpeg binary (handles nested folders)
-        extracted_path = None
-        for root, _, files in os.walk(temp_dir):
-            if extracted_binary in files:
-                extracted_path = os.path.join(root, extracted_binary)
-                break
-
-        if extracted_path is None:
-            raise FileNotFoundError(f"FFmpeg binary '{extracted_binary}' not found in extracted files.")
-
-        # Ensure correct executable permissions (Linux/macOS)
-        if not sys.platform.startswith("win"):
-            os.chmod(extracted_path, 0o755)
-
-        print(f"FFmpeg extracted to: {extracted_path}")
-        return extracted_path
-
-    except Exception as e:
-        print(f"Error extracting FFmpeg: {e}")
-        sys.exit(1)
-
-# Extract and set the FFmpeg path
-FFMPEG_PATH = extract_ffmpeg()
-
-# Test if FFmpeg works
-try:
-    subprocess.run([FFMPEG_PATH, "-version"], check=True)
-    print("FFmpeg is working correctly.")
-except Exception as e:
-    print(f"Error running FFmpeg: {e}")
-
-# Create if it doesn't exist
-if not os.path.exists(os.environ["WHISPER_DOWNLOAD_DIR"]):
-    os.makedirs(os.environ["WHISPER_DOWNLOAD_DIR"])
-
-# Set the path for the WAV file
-wav_file_path = os.path.join(base_path, "temp_audio.wav")
-
-def generate_random_string(length=6):
-    characters = string.ascii_letters + string.digits
-    return ''.join(random.choices(characters, k=length))
-
-
-def randomName(type, amount, extension):
-    random_str = generate_random_string()
-    return f"{type}_{amount}_samples_{random_str}{extension}"
+# Transcription state. Each run gets its own queue/event so a quick stop and
+# restart cannot leave an old worker consuming new audio.
+transcription_queue = queue.Queue()
+is_transcribing = False
+transcribed_text = ""
+model = None
+selected_model_name = None
+recording_stop_event = threading.Event()
+recording_thread = None
+transcription_thread = None
 
 
 def escape_java_script_string(text):
-    # Use json.dumps to escape special characters for JavaScript
-    return json.dumps(text)  # This handles quotes, newlines, etc.
+    """Safely encode text before passing it to the webview's JavaScript context."""
+    return json.dumps(text)
 
 
 class Api:
@@ -148,38 +66,42 @@ class Api:
         self.is_fullscreen = not self.is_fullscreen
         self._window.toggle_fullscreen()
 
-    def report_progress(self, progress):
-        """Best-effort progress update for the startup window."""
+    def report_loading_status(self, message, tone="info"):
+        """Update the startup screen without presenting a fake download percentage."""
         try:
             if self._window:
-                self._window.evaluate_js(f"updateProgressBar({progress})")
+                self._window.evaluate_js(
+                    f"setLoadingStatus({escape_java_script_string(message)}, {escape_java_script_string(tone)})"
+                )
         except Exception as error:
-            print(f"Could not update the progress bar: {error}")
+            print(f"Could not update the model setup status: {error}")
 
     def download_model(self, model_name):
-        global model
+        global model, selected_model_name
         try:
-            self.report_progress(0.06)
-            model = whisper.load_model(model_name, download_root=os.environ["WHISPER_DOWNLOAD_DIR"])
-            self.report_progress(0.92)
+            if model_name not in MODEL_CATALOG:
+                raise ValueError("The selected Whisper model is not supported.")
+
+            selected_model_name = model_name
+            size = MODEL_CATALOG[model_name]["download_size"]
+            self.report_loading_status(
+                f"Downloading the compact ONNX model ({size}). The first download may take a few minutes."
+            )
+            model = load_whisper_model(model_name, models_directory)
+            self.report_loading_status("Model ready. Opening the writing studio.", "done")
             launch_application()
-        except Exception as e:
-            print(f"Error loading model: {e}")
-            try:
-                if self._window:
-                    self._window.evaluate_js(
-                        f"displayText({escape_java_script_string('The model could not be downloaded. Check your connection and try again.')})")
-            except Exception as progress_error:
-                print(f"Could not report the download failure: {progress_error}")
+        except Exception as error:
+            print(f"Error loading ONNX Whisper model: {error}")
+            self.report_loading_status(
+                "The model could not be downloaded or loaded. Check your connection and try again.",
+                "error",
+            )
 
     def display_text(self, text):
         self._window.evaluate_js(f"displayText({escape_java_script_string(text)})")
 
     def update_progress_bar(self, progress):
-        """
-        Updates the progress bar in the webview.
-        """
-        # Update the progress bar element in the webview using JavaScript
+        """Update a determinate progress value when one is available."""
         self._window.evaluate_js(f"updateProgressBar({progress})")
 
     # Start transcription process
@@ -195,7 +117,7 @@ class Api:
         global is_transcribing
         if is_transcribing:
             stop_continuous_transcription()
-            api.stop_timer()
+            self.stop_timer()
             return "Transcription stopped."
         return "Transcription is not running."
 
@@ -668,7 +590,16 @@ class Api:
         pdf.output(file_path)
 
     def notify(self, content):
-        self._window.evaluate_js(f"displayMessage({content})")
+        if self._window:
+            self._window.evaluate_js(
+                f"displayMessage({escape_java_script_string(content)}, 'error')"
+            )
+
+    def transcription_failed(self, message):
+        if self._window:
+            self._window.evaluate_js(
+                f"handleTranscriptionFailure({escape_java_script_string(message)})"
+            )
 
 def launch_application():
     window = webview.create_window('Scriptify', 'index.html', js_api=api, width=1280, height=800,
@@ -676,102 +607,116 @@ def launch_application():
     api.set_window(window)
     webview.windows[0].destroy()
 
-def record_audio_continuously(queue, sample_rate=16000, channels=1):
-    """
-    Continuously records audio in chunks and adds them to the queue for transcription.
-    """
-    chunk_duration = 10  # Duration of each audio chunk in seconds
-    while is_transcribing:
-        print("Recording audio chunk...")
-        audio_data = sd.rec(int(chunk_duration * sample_rate), samplerate=sample_rate, channels=channels, dtype='float32')
-        sd.wait()  # Wait for the recording to finish
 
-        # Convert to int16 and add to queue
-        audio_chunk = (audio_data * 32767).astype(np.int16)
-        queue.put(audio_chunk)
+def get_audio_backend():
+    """Load PortAudio only when voice transcription is started."""
+    import sounddevice
 
-        print("Audio chunk added to queue for transcription.")
+    return sounddevice
 
 
-def transcription_worker():
-    """
-    Worker that transcribes audio chunks from the queue using the Whisper model.
-    """
-    temp_file = os.path.join(base_path, "temp_audio_chunk.wav")  # Temporary file path
+def record_audio_continuously(audio_queue, stop_event, sample_rate=16_000, channels=1):
+    """Record ten-second microphone chunks and hand normalized PCM to ONNX ASR."""
+    try:
+        audio_backend = get_audio_backend()
+        while not stop_event.is_set():
+            print("Recording audio chunk...")
+            audio_data = audio_backend.rec(
+                int(10 * sample_rate),
+                samplerate=sample_rate,
+                channels=channels,
+                dtype="float32",
+            )
+            audio_backend.wait()
+            # ONNX ASR accepts normalized float32 samples directly; no WAV
+            # round-trip, scipy, or FFmpeg process is required.
+            audio_queue.put(np.asarray(audio_data, dtype=np.float32).reshape(-1).copy())
+            print("Audio chunk queued for transcription.")
+    except Exception as error:
+        global is_transcribing
+        is_transcribing = False
+        stop_event.set()
+        print(f"Microphone recording failed: {error}")
+        if api and api._window:
+            api.transcription_failed(
+                "Microphone recording could not continue. Check your input device and try again."
+            )
+    finally:
+        # Queue the sentinel after any final partial recording so the worker
+        # cannot exit early and drop the last chunk when the user presses Stop.
+        audio_queue.put(None)
+
+
+def transcription_worker(audio_queue, model_for_run, model_name_for_run):
+    """Transcribe queued microphone chunks with the selected ONNX Whisper model."""
+    global transcribed_text
 
     while True:
-        audio_chunk = transcription_queue.get()  # Wait for the next audio chunk
-        if audio_chunk is None:  # Exit signal
+        audio_chunk = audio_queue.get()
+        if audio_chunk is None:
             break
 
-        print("Processing audio chunk for transcription...")
-        write(temp_file, 16000, audio_chunk)  # Save chunk to WAV file
-
-        # Transcribe audio chunk
         try:
-            result = model.transcribe(temp_file, fp16=False)  # Set fp16=False for CPU
-            chunk_text = result.get("text", "")
-            print(f"Transcribed Chunk: {chunk_text}")
-
-            # Update the global transcribed text and UI
-            global transcribed_text
+            chunk_text = transcribe_audio(model_for_run, model_name_for_run, audio_chunk)
+            if not chunk_text:
+                continue
+            print(f"Transcribed chunk: {chunk_text}")
             transcribed_text = chunk_text + "\n"
             api.update_transcribed_text(transcribed_text)
-        except Exception as e:
-            print(f"Error in transcription: {e}")
+        except Exception as error:
+            print(f"ONNX transcription failed for an audio chunk: {error}")
+            api.notify("A recorded audio segment could not be transcribed. You can keep dictating.")
 
 
 def start_continuous_transcription():
-    """
-    Starts the continuous audio recording and transcription process.
-    """
-    global is_transcribing
+    """Start the recorder and the background ONNX transcription worker."""
+    global is_transcribing, transcription_queue, recording_stop_event
+    global recording_thread, transcription_thread
+
     if is_transcribing:
         print("Transcription is already running.")
         return
+    if model is None or selected_model_name not in MODEL_CATALOG:
+        raise RuntimeError("The Whisper model is not ready. Restart Scriptify and select a model first.")
+    # Validate that the native audio backend and an input device exist before
+    # toggling the UI into its listening state; ASR inference stays asynchronous.
+    get_audio_backend().query_devices(kind="input")
 
+    transcription_queue = queue.Queue()
+    recording_stop_event = threading.Event()
     is_transcribing = True
-    print("Starting continuous transcription...")
+    print("Starting continuous ONNX transcription...")
 
-    # Start recording thread
+    transcription_thread = threading.Thread(
+        target=transcription_worker,
+        args=(transcription_queue, model, selected_model_name),
+        daemon=True,
+    )
     recording_thread = threading.Thread(
-        target=record_audio_continuously, args=(transcription_queue,), daemon=True)
-    recording_thread.start()
-
-    # Start transcription thread
-    transcription_thread = threading.Thread(target=transcription_worker, daemon=True)
+        target=record_audio_continuously,
+        args=(transcription_queue, recording_stop_event),
+        daemon=True,
+    )
     transcription_thread.start()
+    recording_thread.start()
 
 
 def stop_continuous_transcription():
-    """
-    Stops the continuous transcription process.
-    """
+    """Stop recording; the recorder queues its final chunk before its sentinel."""
     global is_transcribing
     if not is_transcribing:
         print("Transcription is not running.")
         return
 
     is_transcribing = False
-    transcription_queue.put(None)  # Signal transcription worker to exit
+    recording_stop_event.set()
+    # Interrupt sounddevice's current blocking recording so the final partial
+    # chunk can be sent immediately rather than waiting for the full interval.
+    try:
+        get_audio_backend().stop()
+    except Exception as error:
+        print(f"Could not stop the microphone stream cleanly: {error}")
     print("Continuous transcription stopped.")
-
-# def transcription_worker():
-#     model = whisper.load_model("base.en")  # Load the Whisper model once
-#     # transcribe_file(model, 'test.wav', 'transcription.srt')
-#     while True:
-#         transcribing = transcription_queue.get()
-#         if transcribing:
-#             print("Transcription in progress...")
-#             # Record and transcribe audio in real time
-#             record_audio_and_transcribe(model)
-#         else:
-#             print("Transcription stopped.")
-#             api.stop_timer()
-
-def run_transcription_thread():
-    thread = threading.Thread(target=transcription_worker, daemon=True)
-    thread.start()
 
 
 if __name__ == '__main__':

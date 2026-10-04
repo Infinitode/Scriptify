@@ -9,6 +9,16 @@ let savedEditorRange = null;
 let messageTimer = null;
 let readerFontSize = 19;
 
+function loadReaderTheme() {
+  try {
+    return window.localStorage.getItem("scriptify.readerTheme") === "dark" ? "dark" : "light";
+  } catch (error) {
+    return "light";
+  }
+}
+
+let readerTheme = loadReaderTheme();
+
 function getNativeApi() {
   return window.pywebview && window.pywebview.api ? window.pywebview.api : null;
 }
@@ -326,6 +336,36 @@ function updateReaderProgress() {
   if (label) label.textContent = `${progress}%`;
 }
 
+function setReaderTheme(theme, persist = true) {
+  readerTheme = theme === "dark" ? "dark" : "light";
+  const isDark = readerTheme === "dark";
+  document.body.classList.toggle("reader-dark", isDark);
+
+  const toggle = document.getElementById("readerThemeToggle");
+  const icon = document.getElementById("readerThemeIcon");
+  const label = toggle && toggle.querySelector(".reader-theme-label");
+  const action = isDark ? "Switch to a light reading page" : "Switch to a dark reading page";
+  if (toggle) {
+    toggle.setAttribute("aria-pressed", String(isDark));
+    toggle.setAttribute("aria-label", action);
+    toggle.title = action;
+  }
+  if (icon) icon.className = `bi ${isDark ? "bi-sun" : "bi-moon-stars"}`;
+  if (label) label.textContent = isDark ? "Light page" : "Dark page";
+
+  if (persist) {
+    try {
+      window.localStorage.setItem("scriptify.readerTheme", readerTheme);
+    } catch (error) {
+      // Theme still applies for this session if persistent storage is unavailable.
+    }
+  }
+}
+
+function toggleReaderTheme() {
+  setReaderTheme(readerTheme === "dark" ? "light" : "dark");
+}
+
 function toggleReadingMode(force) {
   const entering = typeof force === "boolean" ? force : !document.body.classList.contains("reader-mode");
   if (entering === document.body.classList.contains("reader-mode")) return;
@@ -434,6 +474,8 @@ document.getElementById("max").addEventListener("click", toggleFullscreen);
 document.getElementById("close").addEventListener("click", closeWindow);
 document.getElementById("readingModeToggle").addEventListener("click", () => toggleReadingMode());
 document.getElementById("readerExit").addEventListener("click", () => toggleReadingMode(false));
+document.getElementById("readerThemeToggle").addEventListener("click", toggleReaderTheme);
+setReaderTheme(readerTheme, false);
 document.getElementById("fontDecrease").addEventListener("click", () => {
   readerFontSize = Math.max(15, readerFontSize - 1);
   document.documentElement.style.setProperty("--reader-font-size", `${readerFontSize}px`);
