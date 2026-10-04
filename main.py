@@ -742,7 +742,22 @@ def stop_continuous_transcription():
 if __name__ == '__main__':
     model = None
     api = Api()
+
+    # Resolve a stable per-user storage path for WebView2 so that localStorage
+    # (and cookies) survive between app launches. pywebview 6.x defaults to
+    # private_mode=True, which wipes all browser storage on exit — that is why
+    # auto-saved stories appeared to save correctly within a session but were
+    # gone the next time the app was opened.
+    if sys.platform.startswith("win"):
+        _appdata_root = os.environ.get("APPDATA") or os.path.expanduser("~/AppData/Roaming")
+    elif sys.platform == "darwin":
+        _appdata_root = os.path.expanduser("~/Library/Application Support")
+    else:
+        _appdata_root = os.environ.get("XDG_DATA_HOME") or os.path.expanduser("~/.local/share")
+    _storage_path = os.path.join(os.path.abspath(_appdata_root), "Scriptify", "webview-storage")
+    os.makedirs(_storage_path, exist_ok=True)
+
     window = webview.create_window('Scriptify Startup', 'launch.html', js_api=api, width=800, height=600,
                                    resizable=True, min_size=(800, 600), background_color='#11110f', frameless=True, easy_drag=False)
     api.set_window(window)
-    webview.start()
+    webview.start(private_mode=False, storage_path=_storage_path)

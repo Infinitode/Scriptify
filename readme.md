@@ -21,6 +21,7 @@ Visit our website for screenshots/minimum requirements, and supported platforms:
 - Replaced the PyTorch/OpenAI Whisper runtime with ONNX Runtime and int8 Whisper graphs. Model weights download on demand and stay outside the application bundle.
 - Simplified the model chooser and made its download status honest: the downloader does not expose byte-level progress, so the UI uses an indeterminate indicator instead of fabricated percentages.
 - Added a saved light/dark page preference to reading mode.
+- Fixed a bug where auto-saved stories were lost on every app restart. pywebview 6.x defaults to `private_mode=True`, which wipes `localStorage` (and all WebView2 browser storage) when the app exits. `webview.start()` is now called with `private_mode=False` and a stable `storage_path` pointing to `%APPDATA%/Scriptify/webview-storage` (platform-equivalent on macOS/Linux), so stories saved to `localStorage` survive between launches.
 - Kept the existing editor, story library, backups, formatting, exports, writing statistics, dictionary, and microphone workflow.
 
 ## Changelog `v1.2.0-beta`:
@@ -80,6 +81,12 @@ Automatic story files are kept in Scriptify's per-user application data folder:
 - Windows: `%APPDATA%/Scriptify/stories`
 - macOS: `~/Library/Application Support/Scriptify/stories`
 - Linux: `$XDG_DATA_HOME/Scriptify/stories`, or `~/.local/share/Scriptify/stories`
+
+WebView2's persistent browser profile (used to preserve `localStorage` between sessions) is stored alongside:
+
+- Windows: `%APPDATA%/Scriptify/webview-storage`
+- macOS: `~/Library/Application Support/Scriptify/webview-storage`
+- Linux: `$XDG_DATA_HOME/Scriptify/webview-storage`, or `~/.local/share/Scriptify/webview-storage`
 
 When running in a regular browser rather than the desktop app, the library uses that browser's local storage for the current site.
 
