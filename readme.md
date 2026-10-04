@@ -4,9 +4,9 @@ Scriptify is an AI writing tool designed for authors and creatives. It uses quan
 
 Visit our website for screenshots/minimum requirements, and supported platforms: https://infinitode.netlify.app/apps/scriptify.
 
-## Features
+## Features in `v1.2.1-beta`:
 
-- **Near Realtime Transcription:** Convert spoken words into text almost instantly.
+- **Near Real-time Transcription:** Convert spoken words into text almost instantly.
 - **Focused Writing Studio:** A calmer editor with accessible formatting tools, and a dedicated reading mode with adjustable text size, reading progress, and a persistent light/dark page theme.
 - **Richer Formatting & Exporting:** Use multiple heading levels, quotes, lists, and inline styles, then export your work in popular formats with structure preserved.
 - **Useful Writing Statistics:** Track word and character counts, reading time, sentence and paragraph counts, vocabulary variety, and estimated readability.
