@@ -13,7 +13,7 @@ Visit our website for screenshots/minimum requirements, and supported platforms:
 - **In-app Dictionary:** Look up selected words quickly without leaving the editor.
 - **Ideas & Starting Thoughts:** Browse hundreds of story prompts or get a first line to help move past a blank page. Add an opening thought to your draft with one click.
 - **Automatic Story Library:** Drafts are saved to your per-user application data as you write, then appear in the sidebar and full-screen library the next time you open Scriptify. Browse start and edit dates, rename, copy, or delete stories.
-- **Autosave & Backup:** The active story is saved automatically, with a separate desktop safety snapshot every 10 minutes.
+- **Autosave & Backup:** The active story is saved automatically, the in-app close button waits for pending saves, and a recovery copy protects recent edits if the app exits unexpectedly. A separate desktop safety snapshot is also created every 10 minutes.
 - **No Limits:** Scriptify is 100% free, with no limits or ads.
 
 ## Current development

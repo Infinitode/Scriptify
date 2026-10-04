@@ -43,6 +43,19 @@ function markSaveState(state, message) {
   status.textContent = message || (state === "saving" ? "Saving…" : state === "error" ? "Could not save" : "All changes saved");
   dot.classList.toggle("is-saving", state === "saving");
   dot.classList.toggle("has-error", state === "error");
+
+  const autosaveLabel = document.querySelector(".autosave-label");
+  if (autosaveLabel) {
+    const icon = autosaveLabel.querySelector("i");
+    const text = autosaveLabel.querySelector("span");
+    const label = state === "saving" ? "Saving…" : state === "error" ? "Save failed" : "Saved locally";
+    if (icon) icon.className = `bi ${state === "saving" ? "bi-arrow-repeat" : state === "error" ? "bi-exclamation-circle" : "bi-cloud-check"}`;
+    if (text) text.textContent = label;
+    autosaveLabel.classList.toggle("is-saving", state === "saving");
+    autosaveLabel.classList.toggle("has-error", state === "error");
+    autosaveLabel.title = message || label;
+    autosaveLabel.setAttribute("aria-label", message || label);
+  }
 }
 
 function getWordCount(text) {
@@ -304,10 +317,35 @@ function clearCurrentDocument() {
   titleEditor.focus();
 }
 
-function closeWindow() {
-  const api = getNativeApi();
-  if (api && typeof api.closeWindow === "function") api.closeWindow();
-  else displayMessage("Window controls are available in the desktop app.");
+async function closeWindow() {
+  const requestClose = async () => {
+    if (typeof flushStorySave === "function") {
+      const saved = await flushStorySave();
+      if (!saved) {
+        displayMessage("Your latest changes could not be saved. Keep Scriptify open and try again.", "error");
+        return false;
+      }
+    }
+
+    const api = getNativeApi();
+    if (api && typeof api.closeWindow === "function") {
+      try {
+        // Do not await this bridge call: it destroys the webview, so its
+        // response promise may never settle. The story flush above is awaited.
+        api.closeWindow();
+        return true;
+      } catch (error) {
+        console.error("Could not close the Scriptify window:", error);
+        displayMessage("The Scriptify window could not be closed.", "error");
+        return false;
+      }
+    }
+    displayMessage("Window controls are available in the desktop app.");
+    return false;
+  };
+
+  if (typeof withEditorLocked === "function") return withEditorLocked(requestClose);
+  return requestClose();
 }
 
 function minimizeWindow() {

@@ -283,6 +283,10 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outlin
 #draft-word-count { color: #7e7b73; }
 .autosave-label { gap: 6px; color: #81877d; font-size: 11px; }
 .autosave-label .bi { color: #84a183; font-size: 12px; }
+.autosave-label.is-saving { color: #d0ae72; }
+.autosave-label.is-saving .bi { color: #d0ae72; animation: autosave-spin 1s linear infinite; }
+.autosave-label.has-error, .autosave-label.has-error .bi { color: #d98278; }
+@keyframes autosave-spin { to { transform: rotate(360deg); } }
 
 .editor-toolbar { position: relative; z-index: 5; display: flex; min-height: 53px; align-items: center; gap: 8px; padding: 8px 17px; border-bottom: 1px solid var(--line); background: rgba(29, 29, 26, 0.66); }
 .toolbar-group { display: flex; align-items: center; gap: 2px; }

@@ -271,6 +271,11 @@ class Api:
             data_root = os.path.expanduser("~/Library/Application Support")
         else:
             data_root = os.environ.get("XDG_DATA_HOME") or os.path.expanduser("~/.local/share")
+            # XDG_DATA_HOME must be absolute. Ignore malformed relative values
+            # so drafts always land in a stable per-user location.
+            if not os.path.isabs(data_root):
+                data_root = os.path.expanduser("~/.local/share")
+        data_root = os.path.abspath(os.path.expanduser(data_root))
         directory = os.path.join(data_root, "Scriptify", "stories")
         os.makedirs(directory, exist_ok=True)
         return directory
@@ -311,7 +316,22 @@ class Api:
         try:
             with open(temporary_path, "w", encoding="utf-8") as story_file:
                 json.dump(story, story_file, ensure_ascii=False, indent=2)
+                story_file.flush()
+                os.fsync(story_file.fileno())
             os.replace(temporary_path, path)
+
+            # The rename is atomic, and syncing its containing directory makes
+            # the new filename durable across a sudden process or power loss on
+            # filesystems that support directory fsync.
+            if hasattr(os, "O_DIRECTORY"):
+                try:
+                    directory_fd = os.open(os.path.dirname(path), os.O_RDONLY | os.O_DIRECTORY)
+                    try:
+                        os.fsync(directory_fd)
+                    finally:
+                        os.close(directory_fd)
+                except OSError:
+                    pass
         finally:
             if os.path.exists(temporary_path):
                 os.remove(temporary_path)
